@@ -1,6 +1,13 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+type User = {
+  email: string
+  password: string
+  role: string
+  name: string
+}
+
 export default function Login() {
 
   const navigate =
@@ -14,7 +21,8 @@ export default function Login() {
     setPassword] =
     useState("")
 
-  const users = [
+  const users:
+    User[] = [
 
     {
       email:
@@ -56,6 +64,20 @@ export default function Login() {
 
       name:
         "Kapil"
+    },
+
+    {
+      email:
+        "client@pbs.com",
+
+      password:
+        "1234",
+
+      role:
+        "client",
+
+      name:
+        "Client"
     }
   ]
 
@@ -90,6 +112,30 @@ export default function Login() {
           foundUser
         )
       )
+
+      if (
+        foundUser.role ===
+        "artist"
+      ) {
+
+        navigate(
+          "/artist-shots"
+        )
+
+        return
+      }
+
+      if (
+        foundUser.role ===
+        "client"
+      ) {
+
+        navigate(
+          "/client-portal"
+        )
+
+        return
+      }
 
       navigate(
         "/dashboard"
@@ -227,6 +273,12 @@ export default function Login() {
           <p>
             Artist:
             artist@pbs.com
+            / 1234
+          </p>
+
+          <p>
+            Client:
+            client@pbs.com
             / 1234
           </p>
 

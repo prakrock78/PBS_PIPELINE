@@ -28,6 +28,9 @@ from "./pages/ArtistShots"
 import Timeline
 from "./pages/Timeline"
 
+import ClientPortal
+from "./pages/ClientPortal"
+
 export default function App() {
 
   return (
@@ -89,6 +92,13 @@ export default function App() {
           path="/timeline"
           element={
             <Timeline />
+          }
+        />
+
+        <Route
+          path="/client-portal"
+          element={
+            <ClientPortal />
           }
         />
 
