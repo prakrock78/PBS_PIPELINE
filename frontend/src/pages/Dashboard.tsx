@@ -7,6 +7,13 @@ from "react-router-dom"
 type Shot = {
   status: string
   dueDate?: string
+  artist?: string
+}
+
+type User = {
+  email: string
+  role: string
+  name: string
 }
 
 export default function Dashboard() {
@@ -50,9 +57,32 @@ export default function Dashboard() {
     setOverdue] =
     useState(0)
 
+  const [user,
+    setUser] =
+    useState<User | null>(
+      null
+    )
+
   useEffect(() => {
 
-    /* Projects */
+    const savedUser =
+      JSON.parse(
+        localStorage.getItem(
+          "pbs_user"
+        ) || "null"
+      )
+
+    if (
+      !savedUser
+    ) {
+
+      navigate("/")
+      return
+    }
+
+    setUser(
+      savedUser
+    )
 
     const projects =
       JSON.parse(
@@ -64,8 +94,6 @@ export default function Dashboard() {
     setProjectCount(
       projects.length
     )
-
-    /* Artists */
 
     const artists =
       JSON.parse(
@@ -138,10 +166,25 @@ export default function Dashboard() {
               ) || "[]"
             )
 
-          shotCount +=
-            shots.length
+          const filteredShots =
+            savedUser.role ===
+            "artist"
 
-          shots.forEach(
+              ? shots.filter(
+                  (
+                    shot
+                  ) =>
+                    shot.artist?.toLowerCase()
+                    ===
+                    savedUser.name.toLowerCase()
+                )
+
+              : shots
+
+          shotCount +=
+            filteredShots.length
+
+          filteredShots.forEach(
             (
               shot
             ) => {
@@ -237,7 +280,17 @@ export default function Dashboard() {
       overdueCount
     )
 
-  }, [])
+  }, [navigate])
+
+  const logout =
+    () => {
+
+      localStorage.removeItem(
+        "pbs_user"
+      )
+
+      navigate("/")
+    }
 
   return (
 
@@ -255,8 +308,6 @@ export default function Dashboard() {
           "Arial"
       }}
     >
-
-      {/* Sidebar */}
 
       <div
         style={{
@@ -276,11 +327,24 @@ export default function Dashboard() {
             color:
               "#FF7A00",
             marginBottom:
-              "40px"
+              "10px"
           }}
         >
           PBS
         </h1>
+
+        <p
+          style={{
+            color:
+              "#888",
+            marginBottom:
+              "30px"
+          }}
+        >
+          {
+            user?.role
+          }
+        </p>
 
         <div
           style={menuItem}
@@ -293,31 +357,67 @@ export default function Dashboard() {
           Dashboard
         </div>
 
-        <div
-          style={menuItem}
-          onClick={() =>
-            navigate(
-              "/projects"
-            )
-          }
-        >
-          Projects
-        </div>
+        {(user?.role ===
+          "admin" ||
+          user?.role ===
+          "supervisor") && (
+
+          <>
+            <div
+              style={menuItem}
+              onClick={() =>
+                navigate(
+                  "/projects"
+                )
+              }
+            >
+              Projects
+            </div>
+
+            <div
+              style={menuItem}
+              onClick={() =>
+                navigate(
+                  "/kanban"
+                )
+              }
+            >
+              Kanban
+            </div>
+          </>
+        )}
+
+        {user?.role ===
+          "admin" && (
+
+          <div
+            style={menuItem}
+            onClick={() =>
+              navigate(
+                "/artists"
+              )
+            }
+          >
+            Artists
+          </div>
+        )}
 
         <div
-          style={menuItem}
-          onClick={() =>
-            navigate(
-              "/artists"
-            )
+          style={{
+            ...menuItem,
+            marginTop:
+              "30px",
+            background:
+              "#DC2626"
+          }}
+          onClick={
+            logout
           }
         >
-          Artists
+          Logout
         </div>
 
       </div>
-
-      {/* Main */}
 
       <div
         style={{
@@ -328,16 +428,21 @@ export default function Dashboard() {
       >
 
         <h1>
-          Production Dashboard
+          Welcome,
+          {" "}
+          {
+            user?.name
+          }
         </h1>
 
         <p
           style={{
             color:
               "#888"
-            }}
+          }}
         >
-          Live Pipeline Stats
+          Production
+          Dashboard
         </p>
 
         {overdue > 0 && (
@@ -356,7 +461,10 @@ export default function Dashboard() {
                 "bold"
             }}
           >
-            ⚠ {overdue}
+            ⚠{" "}
+            {
+              overdue
+            }
             {" "}
             Overdue Shots
           </div>
