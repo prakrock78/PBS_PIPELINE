@@ -1,5 +1,4 @@
 import { useState } from "react"
-import axios from "axios"
 import { useNavigate } from "react-router-dom"
 
 export default function Login() {
@@ -15,42 +14,86 @@ export default function Login() {
     setPassword] =
     useState("")
 
+  const users = [
+
+    {
+      email:
+        "admin@pbs.com",
+
+      password:
+        "1234",
+
+      role:
+        "admin",
+
+      name:
+        "Admin"
+    },
+
+    {
+      email:
+        "supervisor@pbs.com",
+
+      password:
+        "1234",
+
+      role:
+        "supervisor",
+
+      name:
+        "Supervisor"
+    },
+
+    {
+      email:
+        "artist@pbs.com",
+
+      password:
+        "1234",
+
+      role:
+        "artist",
+
+      name:
+        "Artist"
+    }
+  ]
+
   const handleLogin =
-    async () => {
+    () => {
 
-      try {
-
-        const response =
-          await axios.post(
-            "http://127.0.0.1:8000/users/login",
-            {},
-            {
-              params: {
-                email,
-                password
-              }
-            }
-          )
-
-        console.log(
-          response.data
+      const foundUser =
+        users.find(
+          (
+            user
+          ) =>
+            user.email ===
+              email &&
+            user.password ===
+              password
         )
 
-        localStorage.setItem(
-          "pbs_login",
-          "true"
-        )
-
-        navigate(
-          "/dashboard"
-        )
-
-      } catch {
+      if (
+        !foundUser
+      ) {
 
         alert(
-          "Invalid Login"
+          "Invalid Credentials"
         )
+
+        return
       }
+
+      localStorage.setItem(
+        "pbs_user",
+        JSON.stringify(
+          foundUser
+        )
+      )
+
+      navigate(
+        "/dashboard"
+      )
     }
 
   return (
@@ -66,48 +109,65 @@ export default function Login() {
         justifyContent:
           "center",
         alignItems:
-          "center"
+          "center",
+        color:
+          "white"
       }}
     >
 
       <div
         style={{
           width:
-            "400px",
+            "420px",
           background:
             "#171717",
           padding:
-            "30px",
+            "40px",
           borderRadius:
-            "20px"
+            "24px",
+          boxShadow:
+            "0 0 30px rgba(0,0,0,0.3)"
         }}
       >
 
         <h1
           style={{
-            color:
-              "white"
+            textAlign:
+              "center",
+            marginBottom:
+              "10px"
           }}
         >
-          Login
+          PBS Login
         </h1>
 
+        <p
+          style={{
+            textAlign:
+              "center",
+            color:
+              "#888",
+            marginBottom:
+              "30px"
+          }}
+        >
+          Production
+          Pipeline
+          Login
+        </p>
+
         <input
+          type="email"
           placeholder=
           "Email"
-
           value={
             email
           }
-
-          onChange={
-            (e) =>
-              setEmail(
-                e.target
-                  .value
-              )
+          onChange={(e) =>
+            setEmail(
+              e.target.value
+            )
           }
-
           style={
             inputStyle
           }
@@ -115,22 +175,16 @@ export default function Login() {
 
         <input
           type="password"
-
           placeholder=
           "Password"
-
           value={
             password
           }
-
-          onChange={
-            (e) =>
-              setPassword(
-                e.target
-                  .value
-              )
+          onChange={(e) =>
+            setPassword(
+              e.target.value
+            )
           }
-
           style={
             inputStyle
           }
@@ -140,27 +194,43 @@ export default function Login() {
           onClick={
             handleLogin
           }
-          style={{
-            width:
-              "100%",
-            padding:
-              "12px",
-            background:
-              "#FF7A00",
-            border:
-              "none",
-            color:
-              "white",
-            borderRadius:
-              "10px",
-            marginTop:
-              "20px",
-            cursor:
-              "pointer"
-          }}
+          style={
+            loginButton
+          }
         >
           Login
         </button>
+
+        <div
+          style={{
+            marginTop:
+              "25px",
+            fontSize:
+              "14px",
+            color:
+              "#999"
+          }}
+        >
+
+          <p>
+            Admin:
+            admin@pbs.com
+            / 1234
+          </p>
+
+          <p>
+            Supervisor:
+            supervisor@pbs.com
+            / 1234
+          </p>
+
+          <p>
+            Artist:
+            artist@pbs.com
+            / 1234
+          </p>
+
+        </div>
 
       </div>
 
@@ -172,17 +242,38 @@ const inputStyle = {
   width:
     "100%",
   padding:
-    "12px",
-  marginTop:
+    "14px",
+  marginBottom:
     "15px",
-  background:
-    "#252525",
+  borderRadius:
+    "12px",
   border:
     "1px solid #333",
+  background:
+    "#252525",
+  color:
+    "white",
+  boxSizing:
+    "border-box" as const
+}
+
+const loginButton = {
+  width:
+    "100%",
+  padding:
+    "14px",
+  background:
+    "#FF7A00",
+  border:
+    "none",
   color:
     "white",
   borderRadius:
-    "10px",
-  boxSizing:
-    "border-box" as const
+    "12px",
+  cursor:
+    "pointer",
+  fontSize:
+    "16px",
+  fontWeight:
+    "bold" as const
 }
