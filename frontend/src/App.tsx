@@ -1,22 +1,17 @@
 import {
   BrowserRouter,
   Routes,
-  Route,
-  Navigate
+  Route
 } from "react-router-dom"
 
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
+import Artists from "./pages/Artists"
 import Projects from "./pages/Projects"
 import ProjectDetails from "./pages/ProjectDetails"
-import Artists from "./pages/Artists"
+import Kanban from "./pages/Kanban"
 
-function App() {
-
-  const isLoggedIn =
-    localStorage.getItem(
-      "pbs_login"
-    )
+export default function App() {
 
   return (
 
@@ -27,75 +22,42 @@ function App() {
         <Route
           path="/"
           element={
-            isLoggedIn
-              ? (
-                <Navigate
-                  to="/dashboard"
-                />
-              )
-              : (
-                <Login />
-              )
+            <Login />
           }
         />
 
         <Route
           path="/dashboard"
           element={
-            isLoggedIn
-              ? (
-                <Dashboard />
-              )
-              : (
-                <Navigate
-                  to="/"
-                />
-              )
-          }
-        />
-
-        <Route
-          path="/projects"
-          element={
-            isLoggedIn
-              ? (
-                <Projects />
-              )
-              : (
-                <Navigate
-                  to="/"
-                />
-              )
-          }
-        />
-
-        <Route
-          path="/project-details"
-          element={
-            isLoggedIn
-              ? (
-                <ProjectDetails />
-              )
-              : (
-                <Navigate
-                  to="/"
-                />
-              )
+            <Dashboard />
           }
         />
 
         <Route
           path="/artists"
           element={
-            isLoggedIn
-              ? (
-                <Artists />
-              )
-              : (
-                <Navigate
-                  to="/"
-                />
-              )
+            <Artists />
+          }
+        />
+
+        <Route
+          path="/projects"
+          element={
+            <Projects />
+          }
+        />
+
+        <Route
+          path="/project-details"
+          element={
+            <ProjectDetails />
+          }
+        />
+
+        <Route
+          path="/kanban"
+          element={
+            <Kanban />
           }
         />
 
@@ -104,5 +66,3 @@ function App() {
     </BrowserRouter>
   )
 }
-
-export default App

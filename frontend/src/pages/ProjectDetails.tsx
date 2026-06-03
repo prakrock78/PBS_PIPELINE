@@ -7,6 +7,11 @@ type Review = {
   reviewedAt: string
 }
 
+type SupervisorReview = {
+  status: string
+  notes: string
+}
+
 type Version = {
   id: number
   version: string
@@ -25,6 +30,8 @@ type Shot = {
   clientReview?: string
   clientNotes?: string
   reviewHistory?: Review[]
+
+  supervisorReview?: SupervisorReview
 }
 
 type Project = {
@@ -138,7 +145,14 @@ export default function ProjectDetails() {
               clientNotes:
                 shot.clientNotes || "",
               reviewHistory:
-                shot.reviewHistory || []
+                shot.reviewHistory || [],
+              supervisorReview:
+                shot.supervisorReview || {
+                  status:
+                    "Pending",
+                  notes:
+                    ""
+                }
             })
           )
 
@@ -251,7 +265,7 @@ export default function ProjectDetails() {
           ]
         : []
 
-    const shotData = {
+      const shotData = {
 
       name:
         shotName,
@@ -274,7 +288,14 @@ export default function ProjectDetails() {
         "",
 
       reviewHistory:
-        []
+        [],
+
+      supervisorReview: {
+        status:
+          "Pending",
+        notes:
+          ""
+      }
     }
 
     setShots([
@@ -390,6 +411,36 @@ export default function ProjectDetails() {
       setShots(updated)
     }
 
+  const updateSupervisorReview =
+    (
+      index: number,
+      field:
+        "status" |
+        "notes",
+      value:
+        string
+    ) => {
+
+      const updated =
+        [...shots]
+
+      updated[index] = {
+
+        ...updated[index],
+
+        supervisorReview: {
+
+          ...updated[index]
+            .supervisorReview,
+
+          [field]:
+            value
+        }
+      }
+
+      setShots(updated)
+    }
+
   return (
 
     <div
@@ -491,6 +542,100 @@ export default function ProjectDetails() {
               >
                 {shot.status}
               </span>
+                            <div
+                style={{
+                  marginTop:
+                    "20px",
+                  padding:
+                    "20px",
+                  background:
+                    "#1F1F1F",
+                  borderRadius:
+                    "16px"
+                }}
+              >
+
+                <h3>
+                  Supervisor Review
+                </h3>
+
+                <select
+                  value={
+                    shot
+                      .supervisorReview
+                      ?.status ||
+                    "Pending"
+                  }
+                  onChange={
+                    (e) =>
+                      updateSupervisorReview(
+                        index,
+                        "status",
+                        e.target
+                          .value
+                      )
+                  }
+                  style={{
+                    ...inputStyle,
+                    marginTop:
+                      "10px"
+                  }}
+                >
+
+                  <option>
+                    Pending
+                  </option>
+
+                  <option>
+                    Approved
+                  </option>
+
+                  <option>
+                    Retake
+                  </option>
+
+                  <option>
+                    Hold
+                  </option>
+
+                </select>
+
+                <textarea
+                  placeholder=
+                  "Internal Notes"
+                  value={
+                    shot
+                      .supervisorReview
+                      ?.notes ||
+                    ""
+                  }
+                  onChange={
+                    (e) =>
+                      updateSupervisorReview(
+                        index,
+                        "notes",
+                        e.target
+                          .value
+                      )
+                  }
+                  style={{
+                    ...inputStyle,
+                    minHeight:
+                      "100px"
+                  }}
+                />
+
+                <button
+                  style={{
+                    ...addBtn,
+                    marginTop:
+                      "10px"
+                  }}
+                >
+                  Save Review
+                </button>
+
+              </div>
 
               <div
                 style={{
@@ -847,66 +992,106 @@ export default function ProjectDetails() {
 }
 
 const shotCard = {
-  background: "#171717",
-  padding: "20px",
-  borderRadius: "20px",
-  marginBottom: "20px"
+  background:
+    "#171717",
+  padding:
+    "20px",
+  borderRadius:
+    "20px",
+  marginBottom:
+    "20px"
 }
 
 const versionCard = {
-  background: "#252525",
-  padding: "12px",
-  borderRadius: "12px",
-  marginTop: "10px"
+  background:
+    "#252525",
+  padding:
+    "12px",
+  borderRadius:
+    "12px",
+  marginTop:
+    "10px"
 }
 
 const addBtn = {
-  background: "#FF7A00",
-  border: "none",
-  color: "white",
-  padding: "12px 20px",
-  borderRadius: "10px",
-  cursor: "pointer"
+  background:
+    "#FF7A00",
+  border:
+    "none",
+  color:
+    "white",
+  padding:
+    "12px 20px",
+  borderRadius:
+    "10px",
+  cursor:
+    "pointer"
 }
 
 const overlay = {
-  position: "fixed" as const,
+  position:
+    "fixed" as const,
   top: 0,
   left: 0,
-  width: "100%",
-  height: "100%",
-  background: "rgba(0,0,0,0.8)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center"
+  width:
+    "100%",
+  height:
+    "100%",
+  background:
+    "rgba(0,0,0,0.8)",
+  display:
+    "flex",
+  justifyContent:
+    "center",
+  alignItems:
+    "center"
 }
 
 const popup = {
-  width: "450px",
-  background: "#171717",
-  padding: "30px",
-  borderRadius: "20px"
+  width:
+    "450px",
+  background:
+    "#171717",
+  padding:
+    "30px",
+  borderRadius:
+    "20px"
 }
 
 const inputStyle = {
-  width: "100%",
-  padding: "12px",
-  marginTop: "15px",
-  background: "#252525",
-  border: "1px solid #333",
-  color: "white",
-  borderRadius: "10px",
-  boxSizing: "border-box" as const
+  width:
+    "100%",
+  padding:
+    "12px",
+  marginTop:
+    "15px",
+  background:
+    "#252525",
+  border:
+    "1px solid #333",
+  color:
+    "white",
+  borderRadius:
+    "10px",
+  boxSizing:
+    "border-box" as const
 }
 
 const saveBtn = {
-  width: "100%",
-  padding: "12px",
-  marginTop: "20px",
-  background: "#FF7A00",
-  border: "none",
-  color: "white",
-  borderRadius: "10px",
-  cursor: "pointer"
+  width:
+    "100%",
+  padding:
+    "12px",
+  marginTop:
+    "20px",
+  background:
+    "#FF7A00",
+  border:
+    "none",
+  color:
+    "white",
+  borderRadius:
+    "10px",
+  cursor:
+    "pointer"
 }
-
