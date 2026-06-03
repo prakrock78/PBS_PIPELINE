@@ -1,10 +1,12 @@
-import { useEffect, useState }
+import { useEffect, useRef, useState }
 from "react"
 
 type Version = {
   id: number
   version: string
   fileName: string
+  fileUrl?: string
+  fileType?: string
   notes: string
   uploadedAt: string
 }
@@ -43,6 +45,17 @@ export default function ArtistShots() {
   const [user,
     setUser] =
     useState<User | null>(
+      null
+    )
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(
+      null
+    )
+
+  const [selectedShot,
+    setSelectedShot] =
+    useState<string | null>(
       null
     )
 
@@ -98,6 +111,8 @@ export default function ArtistShots() {
 
                   assignedShots.push({
                     ...shot,
+                    versions:
+                      shot.versions || [],
                     projectId
                   })
                 }
@@ -135,24 +150,47 @@ export default function ArtistShots() {
 
   }, [])
 
-  const uploadVersion =
+  const openFilePicker =
     (
       shotName:
         string
     ) => {
 
-      const file =
-        prompt(
-          "File Name"
-        )
+      setSelectedShot(
+        shotName
+      )
 
-      if (!file)
-        return
+      fileInputRef
+        .current
+        ?.click()
+    }
+
+  const handleFileUpload =
+    (
+      e:
+        React.ChangeEvent<
+          HTMLInputElement
+        >
+    ) => {
+
+      const file =
+        e.target
+          .files?.[0]
+
+      if (
+        !file ||
+        !selectedShot
+      ) return
 
       const notes =
         prompt(
           "Version Notes"
         ) || ""
+
+      const fileUrl =
+        URL.createObjectURL(
+          file
+        )
 
       const updated =
         [...shots]
@@ -163,7 +201,7 @@ export default function ArtistShots() {
             shot
           ) =>
             shot.name ===
-            shotName
+            selectedShot
         )
 
       if (
@@ -200,7 +238,12 @@ export default function ArtistShots() {
           )}`,
 
         fileName:
-          file,
+          file.name,
+
+        fileUrl,
+
+        fileType:
+          file.type,
 
         notes,
 
@@ -272,6 +315,9 @@ export default function ArtistShots() {
           user
         )
       }
+
+      e.target.value =
+        ""
     }
 
   return (
@@ -305,6 +351,21 @@ export default function ArtistShots() {
           user?.name
         }
       </p>
+
+      <input
+        ref={
+          fileInputRef
+        }
+        type="file"
+        style={{
+          display:
+            "none"
+        }}
+        accept="image/*,video/*"
+        onChange={
+          handleFileUpload
+        }
+      />
 
       <div
         style={{
@@ -367,7 +428,7 @@ export default function ArtistShots() {
 
               <button
                 onClick={() =>
-                  uploadVersion(
+                  openFilePicker(
                     shot.name
                   )
                 }
@@ -400,4 +461,3 @@ export default function ArtistShots() {
     </div>
   )
 }
-

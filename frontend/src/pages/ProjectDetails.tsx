@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react"
+import {
+  useEffect,
+  useState
+} from "react"
 
 type Review = {
   id: number
@@ -16,6 +19,8 @@ type Version = {
   id: number
   version: string
   fileName: string
+  fileUrl?: string
+  fileType?: string
   notes: string
   uploadedAt: string
 }
@@ -30,7 +35,6 @@ type Shot = {
   clientReview?: string
   clientNotes?: string
   reviewHistory?: Review[]
-
   supervisorReview?: SupervisorReview
 }
 
@@ -52,37 +56,64 @@ type Artist = {
 
 export default function ProjectDetails() {
 
-  const [project, setProject] =
-    useState<Project | null>(null)
+  const [project,
+    setProject] =
+    useState<Project | null>(
+      null
+    )
 
-  const [artists, setArtists] =
-    useState<Artist[]>([])
+  const [artists,
+    setArtists] =
+    useState<Artist[]>(
+      []
+    )
 
-  const [shots, setShots] =
-    useState<Shot[]>([])
+  const [shots,
+    setShots] =
+    useState<Shot[]>(
+      []
+    )
 
-  const [showForm, setShowForm] =
+  const [showForm,
+    setShowForm] =
     useState(false)
 
-  const [shotName, setShotName] =
+  const [previewOpen,
+    setPreviewOpen] =
+    useState(false)
+
+  const [previewFile,
+    setPreviewFile] =
+    useState<Version | null>(
+      null
+    )
+
+  const [shotName,
+    setShotName] =
     useState("")
 
-  const [artist, setArtist] =
+  const [artist,
+    setArtist] =
     useState("")
 
-  const [status, setStatus] =
+  const [status,
+    setStatus] =
     useState("Assigned")
 
-  const [priority, setPriority] =
+  const [priority,
+    setPriority] =
     useState("Medium")
 
-  const [dueDate, setDueDate] =
+  const [dueDate,
+    setDueDate] =
     useState("")
 
-  const [fileName, setFileName] =
+  const [fileName,
+    setFileName] =
     useState("")
 
-  const [notes, setNotes] =
+  const [notes,
+    setNotes] =
     useState("")
 
   const workflow = [
@@ -107,7 +138,9 @@ export default function ProjectDetails() {
         "pbs_artists"
       )
 
-    if (savedArtists) {
+    if (
+      savedArtists
+    ) {
 
       setArtists(
         JSON.parse(
@@ -116,36 +149,57 @@ export default function ProjectDetails() {
       )
     }
 
-    if (selected) {
+    if (
+      selected
+    ) {
 
       const parsed =
-        JSON.parse(selected)
+        JSON.parse(
+          selected
+        )
 
-      setProject(parsed)
+      setProject(
+        parsed
+      )
 
       const savedShots =
         localStorage.getItem(
           `pbs_shots_${parsed.id}`
         )
 
-      if (savedShots) {
+      if (
+        savedShots
+      ) {
 
         const parsedShots =
-          JSON.parse(savedShots)
+          JSON.parse(
+            savedShots
+          )
 
         const safeShots =
           parsedShots.map(
-            (shot: any) => ({
+            (
+              shot: any
+            ) => ({
+
               ...shot,
+
               versions:
-                shot.versions || [],
+                shot.versions ||
+                [],
+
               clientReview:
                 shot.clientReview ||
                 "Pending",
+
               clientNotes:
-                shot.clientNotes || "",
+                shot.clientNotes ||
+                "",
+
               reviewHistory:
-                shot.reviewHistory || [],
+                shot.reviewHistory ||
+                [],
+
               supervisorReview:
                 shot.supervisorReview || {
                   status:
@@ -156,7 +210,9 @@ export default function ProjectDetails() {
             })
           )
 
-        setShots(safeShots)
+        setShots(
+          safeShots
+        )
       }
     }
 
@@ -164,37 +220,81 @@ export default function ProjectDetails() {
 
   useEffect(() => {
 
-    if (project) {
+    if (
+      project
+    ) {
 
       localStorage.setItem(
         `pbs_shots_${project.id}`,
-        JSON.stringify(shots)
+        JSON.stringify(
+          shots
+        )
       )
     }
 
-  }, [shots, project])
+  }, [
+    shots,
+    project
+  ])
+
+  const openPreview =
+    (
+      version:
+        Version
+    ) => {
+
+      if (
+        !version.fileUrl
+      ) {
+
+        alert(
+          "Preview not available"
+        )
+
+        return
+      }
+
+      setPreviewFile(
+        version
+      )
+
+      setPreviewOpen(
+        true
+      )
+    }
 
   const getStatusColor =
-    (value: string) => {
+    (
+      value:
+        string
+    ) => {
 
-      switch (value) {
+      switch (
+        value
+      ) {
 
-        case "Delivered":
+        case
+          "Delivered":
           return "#16A34A"
 
-        case "Approved":
+        case
+          "Approved":
           return "#059669"
 
-        case "Review":
+        case
+          "Review":
           return "#2563EB"
 
-        case "WIP":
+        case
+          "WIP":
           return "#F59E0B"
 
-        case "Retake":
+        case
+          "Retake":
           return "#DC2626"
 
-        case "Assigned":
+        case
+          "Assigned":
           return "#7C3AED"
 
         default:
@@ -203,17 +303,25 @@ export default function ProjectDetails() {
     }
 
   const getReviewColor =
-    (value: string) => {
+    (
+      value:
+        string
+    ) => {
 
-      switch (value) {
+      switch (
+        value
+      ) {
 
-        case "Approved":
+        case
+          "Approved":
           return "#16A34A"
 
-        case "Retake":
+        case
+          "Retake":
           return "#DC2626"
 
-        case "Hold":
+        case
+          "Hold":
           return "#F59E0B"
 
         default:
@@ -221,100 +329,123 @@ export default function ProjectDetails() {
       }
     }
 
-  const resetForm = () => {
+      const resetForm =
+    () => {
 
-    setShotName("")
-    setArtist("")
-    setStatus("Assigned")
-    setPriority("Medium")
-    setDueDate("")
-    setFileName("")
-    setNotes("")
-    setShowForm(false)
-  }
-
-  const saveShot = () => {
-
-    if (
-      !shotName ||
-      !artist ||
-      !dueDate
-    ) {
-
-      alert(
-        "Fill all fields"
+      setShotName("")
+      setArtist("")
+      setStatus(
+        "Assigned"
       )
-
-      return
+      setPriority(
+        "Medium"
+      )
+      setDueDate("")
+      setFileName("")
+      setNotes("")
+      setShowForm(
+        false
+      )
     }
 
-    const firstVersion =
-      fileName
-        ? [
-            {
-              id:
-                Date.now(),
-              version:
-                "v001",
-              fileName,
-              notes,
-              uploadedAt:
-                new Date()
-                  .toLocaleString()
-            }
-          ]
-        : []
+  const saveShot =
+    () => {
+
+      if (
+        !shotName ||
+        !artist ||
+        !dueDate
+      ) {
+
+        alert(
+          "Fill all fields"
+        )
+
+        return
+      }
+
+      const firstVersion =
+        fileName
+          ? [
+              {
+                id:
+                  Date.now(),
+
+                version:
+                  "v001",
+
+                fileName,
+
+                fileUrl:
+                  "",
+
+                fileType:
+                  "",
+
+                notes,
+
+                uploadedAt:
+                  new Date()
+                    .toLocaleString()
+              }
+            ]
+          : []
 
       const shotData = {
 
-      name:
-        shotName,
+        name:
+          shotName,
 
-      artist,
+        artist,
 
-      status,
+        status,
 
-      priority,
+        priority,
 
-      dueDate,
+        dueDate,
 
-      versions:
-        firstVersion,
+        versions:
+          firstVersion,
 
-      clientReview:
-        "Pending",
-
-      clientNotes:
-        "",
-
-      reviewHistory:
-        [],
-
-      supervisorReview: {
-        status:
+        clientReview:
           "Pending",
-        notes:
-          ""
+
+        clientNotes:
+          "",
+
+        reviewHistory:
+          [],
+
+        supervisorReview: {
+          status:
+            "Pending",
+          notes:
+            ""
+        }
       }
+
+      setShots([
+        ...shots,
+        shotData
+      ])
+
+      resetForm()
     }
 
-    setShots([
-      ...shots,
-      shotData
-    ])
-
-    resetForm()
-  }
-
   const addVersion =
-    (index: number) => {
+    (
+      index:
+        number
+    ) => {
 
       const file =
         prompt(
           "Enter File Name"
         )
 
-      if (!file)
+      if (
+        !file
+      )
         return
 
       const note =
@@ -327,45 +458,62 @@ export default function ProjectDetails() {
 
       const versionCount =
         updated[index]
-          .versions.length + 1
+          .versions
+          .length + 1
 
-      updated[index]
-        .versions.push({
+      updated[
+        index
+      ]
+        .versions
+        .push({
 
-        id:
-          Date.now(),
+          id:
+            Date.now(),
 
-        version:
-          `v${String(
-            versionCount
-          ).padStart(
-            3,
-            "0"
-          )}`,
+          version:
+            `v${String(
+              versionCount
+            ).padStart(
+              3,
+              "0"
+            )}`,
 
-        fileName:
-          file,
+          fileName:
+            file,
 
-        notes:
-          note,
+          fileUrl:
+            "",
 
-        uploadedAt:
-          new Date()
-            .toLocaleString()
-      })
+          fileType:
+            "",
 
-      setShots(updated)
+          notes:
+            note,
+
+          uploadedAt:
+            new Date()
+              .toLocaleString()
+        })
+
+      setShots(
+        updated
+      )
     }
 
   const addClientReview =
-    (index: number) => {
+    (
+      index:
+        number
+    ) => {
 
       const review =
         prompt(
           "Approved / Retake / Hold"
         )
 
-      if (!review)
+      if (
+        !review
+      )
         return
 
       const note =
@@ -376,9 +524,13 @@ export default function ProjectDetails() {
       const updated =
         [...shots]
 
-      updated[index] = {
+      updated[
+        index
+      ] = {
 
-        ...updated[index],
+        ...updated[
+          index
+        ],
 
         clientReview:
           review,
@@ -388,8 +540,13 @@ export default function ProjectDetails() {
 
         reviewHistory: [
 
-          ...(updated[index]
-            .reviewHistory || []),
+          ...(
+            updated[
+              index
+            ]
+              .reviewHistory ||
+            []
+          ),
 
           {
             id:
@@ -408,15 +565,20 @@ export default function ProjectDetails() {
         ]
       }
 
-      setShots(updated)
+      setShots(
+        updated
+      )
     }
 
   const updateSupervisorReview =
     (
-      index: number,
+      index:
+        number,
+
       field:
         "status" |
         "notes",
+
       value:
         string
     ) => {
@@ -424,13 +586,19 @@ export default function ProjectDetails() {
       const updated =
         [...shots]
 
-      updated[index] = {
+      updated[
+        index
+      ] = {
 
-        ...updated[index],
+        ...updated[
+          index
+        ],
 
         supervisorReview: {
 
-          ...updated[index]
+          ...updated[
+            index
+          ]
             .supervisorReview,
 
           [field]:
@@ -438,7 +606,9 @@ export default function ProjectDetails() {
         }
       }
 
-      setShots(updated)
+      setShots(
+        updated
+      )
     }
 
   return (
@@ -454,9 +624,9 @@ export default function ProjectDetails() {
         padding:
           "30px"
       }}
-    >
+      >
 
-      <div
+         <div
         style={{
           display:
             "flex",
@@ -470,7 +640,9 @@ export default function ProjectDetails() {
         <div>
 
           <h1>
-            {project?.name}
+            {
+              project?.name
+            }
           </h1>
 
           <p
@@ -479,17 +651,24 @@ export default function ProjectDetails() {
                 "#888"
             }}
           >
-            Client:{" "}
-            {project?.client}
+            Client:
+            {" "}
+            {
+              project?.client
+            }
           </p>
 
         </div>
 
         <button
           onClick={() =>
-            setShowForm(true)
+            setShowForm(
+              true
+            )
           }
-          style={addBtn}
+          style={
+            addBtn
+          }
         >
           + Add Shot
         </button>
@@ -510,22 +689,34 @@ export default function ProjectDetails() {
           ) => (
 
             <div
-              key={index}
-              style={shotCard}
+              key={
+                index
+              }
+              style={
+                shotCard
+              }
             >
 
               <h2>
-                {shot.name}
+                {
+                  shot.name
+                }
               </h2>
 
               <p>
-                Artist:{" "}
-                {shot.artist}
+                Artist:
+                {" "}
+                {
+                  shot.artist
+                }
               </p>
 
               <p>
-                Due:{" "}
-                {shot.dueDate}
+                Due:
+                {" "}
+                {
+                  shot.dueDate
+                }
               </p>
 
               <span
@@ -540,9 +731,12 @@ export default function ProjectDetails() {
                     "10px"
                 }}
               >
-                {shot.status}
+                {
+                  shot.status
+                }
               </span>
-                            <div
+
+              <div
                 style={{
                   marginTop:
                     "20px",
@@ -556,7 +750,8 @@ export default function ProjectDetails() {
               >
 
                 <h3>
-                  Supervisor Review
+                  Supervisor
+                  Review
                 </h3>
 
                 <select
@@ -625,16 +820,6 @@ export default function ProjectDetails() {
                   }}
                 />
 
-                <button
-                  style={{
-                    ...addBtn,
-                    marginTop:
-                      "10px"
-                  }}
-                >
-                  Save Review
-                </button>
-
               </div>
 
               <div
@@ -645,7 +830,8 @@ export default function ProjectDetails() {
               >
 
                 <strong>
-                  Client Review:
+                  Client
+                  Review:
                 </strong>
 
                 <span
@@ -669,22 +855,23 @@ export default function ProjectDetails() {
                   }
                 </span>
 
-                {shot.clientNotes && (
-
-                  <p
-                    style={{
-                      marginTop:
-                        "10px"
-                    }}
-                  >
-                    Notes:{" "}
-                    {
-                      shot.clientNotes
-                    }
-                  </p>
-                )}
-
               </div>
+
+              {shot.clientNotes && (
+
+                <p
+                  style={{
+                    marginTop:
+                      "10px"
+                  }}
+                >
+                  Notes:
+                  {" "}
+                  {
+                    shot.clientNotes
+                  }
+                </p>
+              )}
 
               <h3
                 style={{
@@ -692,7 +879,8 @@ export default function ProjectDetails() {
                     "20px"
                 }}
               >
-                Version History
+                Version
+                History
               </h3>
 
               {shot.versions.map(
@@ -704,8 +892,15 @@ export default function ProjectDetails() {
                     key={
                       version.id
                     }
-                    style={
-                      versionCard
+                    style={{
+                      ...versionCard,
+                      cursor:
+                        "pointer"
+                    }}
+                    onClick={() =>
+                      openPreview(
+                        version
+                      )
                     }
                   >
 
@@ -716,14 +911,16 @@ export default function ProjectDetails() {
                     </strong>
 
                     <p>
-                      File:{" "}
+                      File:
+                      {" "}
                       {
                         version.fileName
                       }
                     </p>
 
                     <p>
-                      Notes:{" "}
+                      Notes:
+                      {" "}
                       {
                         version.notes
                       }
@@ -738,52 +935,6 @@ export default function ProjectDetails() {
                   </div>
                 )
               )}
-
-              <h3
-                style={{
-                  marginTop:
-                    "20px"
-                }}
-              >
-                Review History
-              </h3>
-
-              {(shot.reviewHistory || [])
-                .map(
-                  (
-                    review
-                  ) => (
-
-                    <div
-                      key={
-                        review.id
-                      }
-                      style={
-                        versionCard
-                      }
-                    >
-
-                      <strong>
-                        {
-                          review.status
-                        }
-                      </strong>
-
-                      <p>
-                        {
-                          review.notes
-                        }
-                      </p>
-
-                      <small>
-                        {
-                          review.reviewedAt
-                        }
-                      </small>
-
-                    </div>
-                  )
-                )}
 
               <div
                 style={{
@@ -802,9 +953,14 @@ export default function ProjectDetails() {
                       index
                     )
                   }
-                  style={addBtn}
+                  style={
+                    addBtn
+                  }
                 >
-                  + Upload New Version
+                  +
+                  Upload
+                  New
+                  Version
                 </button>
 
                 <button
@@ -819,7 +975,8 @@ export default function ProjectDetails() {
                       "#2563EB"
                   }}
                 >
-                  Client Review
+                  Client
+                  Review
                 </button>
 
               </div>
@@ -829,15 +986,18 @@ export default function ProjectDetails() {
         )}
 
       </div>
-
-      {showForm && (
+            {showForm && (
 
         <div
-          style={overlay}
+          style={
+            overlay
+          }
         >
 
           <div
-            style={popup}
+            style={
+              popup
+            }
           >
 
             <h2>
@@ -850,9 +1010,12 @@ export default function ProjectDetails() {
               value={
                 shotName
               }
-              onChange={(e) =>
+              onChange={(
+                e
+              ) =>
                 setShotName(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
               style={
@@ -861,10 +1024,15 @@ export default function ProjectDetails() {
             />
 
             <select
-              value={artist}
-              onChange={(e) =>
+              value={
+                artist
+              }
+              onChange={(
+                e
+              ) =>
                 setArtist(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
               style={
@@ -873,7 +1041,8 @@ export default function ProjectDetails() {
             >
 
               <option value="">
-                Select Artist
+                Select
+                Artist
               </option>
 
               {artists.map(
@@ -903,35 +1072,52 @@ export default function ProjectDetails() {
             </select>
 
             <select
-              value={status}
-              onChange={(e) =>
+              value={
+                status
+              }
+              onChange={(
+                e
+              ) =>
                 setStatus(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
               style={
                 inputStyle
               }
             >
+
               {workflow.map(
                 (
                   item
                 ) => (
+
                   <option
-                    key={item}
+                    key={
+                      item
+                    }
                   >
-                    {item}
+                    {
+                      item
+                    }
                   </option>
                 )
               )}
+
             </select>
 
             <input
               type="date"
-              value={dueDate}
-              onChange={(e) =>
+              value={
+                dueDate
+              }
+              onChange={(
+                e
+              ) =>
                 setDueDate(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
               style={
@@ -941,13 +1127,17 @@ export default function ProjectDetails() {
 
             <input
               type="file"
-              onChange={(e) => {
+              onChange={(
+                e
+              ) => {
 
                 const file =
                   e.target
                     .files?.[0]
 
-                if (file) {
+                if (
+                  file
+                ) {
 
                   setFileName(
                     file.name
@@ -962,10 +1152,15 @@ export default function ProjectDetails() {
             <textarea
               placeholder=
               "Version Notes"
-              value={notes}
-              onChange={(e) =>
+              value={
+                notes
+              }
+              onChange={(
+                e
+              ) =>
                 setNotes(
-                  e.target.value
+                  e.target
+                    .value
                 )
               }
               style={{
@@ -976,11 +1171,155 @@ export default function ProjectDetails() {
             />
 
             <button
-              onClick={saveShot}
-              style={saveBtn}
+              onClick={
+                saveShot
+              }
+              style={
+                saveBtn
+              }
             >
               Save Shot
             </button>
+
+          </div>
+
+        </div>
+      )}
+
+      {previewOpen &&
+      previewFile && (
+
+        <div
+          style={{
+            position:
+              "fixed",
+            top: 0,
+            left: 0,
+            width:
+              "100%",
+            height:
+              "100%",
+            background:
+              "rgba(0,0,0,0.95)",
+            display:
+              "flex",
+            justifyContent:
+              "center",
+            alignItems:
+              "center",
+            zIndex:
+              9999
+          }}
+        >
+
+          <div
+            style={{
+              width:
+                "80%",
+              maxWidth:
+                "1000px",
+              background:
+                "#171717",
+              padding:
+                "20px",
+              borderRadius:
+                "20px",
+              position:
+                "relative"
+            }}
+          >
+
+            <button
+              onClick={() =>
+                setPreviewOpen(
+                  false
+                )
+              }
+              style={{
+                position:
+                  "absolute",
+                top:
+                  "20px",
+                right:
+                  "20px",
+                background:
+                  "#DC2626",
+                border:
+                  "none",
+                color:
+                  "white",
+                padding:
+                  "10px 14px",
+                borderRadius:
+                  "10px",
+                cursor:
+                  "pointer"
+              }}
+            >
+              Close
+            </button>
+
+            <h2>
+              {
+                previewFile
+                  .fileName
+              }
+            </h2>
+
+            {previewFile
+              .fileType
+              ?.startsWith(
+                "image"
+              ) ? (
+
+              <img
+                src={
+                  previewFile
+                    .fileUrl
+                }
+                alt="preview"
+                style={{
+                  width:
+                    "100%",
+                  borderRadius:
+                    "14px",
+                  marginTop:
+                    "20px"
+                }}
+              />
+
+            ) : previewFile
+              .fileType
+              ?.startsWith(
+                "video"
+              ) ? (
+
+              <video
+                controls
+                style={{
+                  width:
+                    "100%",
+                  borderRadius:
+                    "14px",
+                  marginTop:
+                    "20px"
+                }}
+              >
+                <source
+                  src={
+                    previewFile
+                      .fileUrl
+                  }
+                />
+              </video>
+
+            ) : (
+
+              <p>
+                Preview
+                unavailable
+              </p>
+            )}
 
           </div>
 
