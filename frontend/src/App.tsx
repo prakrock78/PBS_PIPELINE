@@ -25,6 +25,9 @@ from "./pages/Kanban"
 import ArtistShots
 from "./pages/ArtistShots"
 
+import Timeline
+from "./pages/Timeline"
+
 export default function App() {
 
   return (
@@ -79,6 +82,13 @@ export default function App() {
           path="/artist-shots"
           element={
             <ArtistShots />
+          }
+        />
+
+        <Route
+          path="/timeline"
+          element={
+            <Timeline />
           }
         />
 

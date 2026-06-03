@@ -1,4 +1,13 @@
-import { useEffect, useState } from "react"
+import {
+  useEffect,
+  useState
+} from "react"
+
+import {
+  DragDropContext,
+  Droppable,
+  Draggable
+} from "@hello-pangea/dnd"
 
 type Shot = {
   name: string
@@ -6,6 +15,7 @@ type Shot = {
   status: string
   priority: string
   dueDate: string
+  projectId: string
 }
 
 const columns = [
@@ -21,102 +31,78 @@ export default function Kanban() {
 
   const [shots,
     setShots] =
-    useState<
-      (Shot & {
-        projectId: string
-      })[]
-    >([])
+    useState<Shot[]>(
+      []
+    )
+
+  const loadShots =
+    () => {
+
+      const allShots:
+        Shot[] = []
+
+      Object.keys(
+        localStorage
+      ).forEach(
+        (
+          key
+        ) => {
+
+          if (
+            key.startsWith(
+              "pbs_shots_"
+            )
+          ) {
+
+            const projectId =
+              key.replace(
+                "pbs_shots_",
+                ""
+              )
+
+            const savedShots =
+              JSON.parse(
+                localStorage.getItem(
+                  key
+                ) || "[]"
+              )
+
+            savedShots.forEach(
+              (
+                shot: any
+              ) => {
+
+                allShots.push({
+                  ...shot,
+                  projectId
+                })
+              }
+            )
+          }
+        }
+      )
+
+      setShots(
+        allShots
+      )
+    }
 
   useEffect(() => {
 
-    const allShots:
-      (Shot & {
-        projectId: string
-      })[] = []
-
-    Object.keys(
-      localStorage
-    ).forEach(
-      (key) => {
-
-        if (
-          key.startsWith(
-            "pbs_shots_"
-          )
-        ) {
-
-          const projectId =
-            key.replace(
-              "pbs_shots_",
-              ""
-            )
-
-          const savedShots =
-            JSON.parse(
-              localStorage.getItem(
-                key
-              ) || "[]"
-            )
-
-          savedShots.forEach(
-            (
-              shot: Shot
-            ) => {
-
-              allShots.push({
-                ...shot,
-                projectId
-              })
-            }
-          )
-        }
-      }
-    )
-
-    setShots(
-      allShots
-    )
+    loadShots()
 
   }, [])
 
-  const moveShot =
+  const saveShots =
     (
-      shotName:
-        string,
-      newStatus:
-        string
+      updated:
+        Shot[]
     ) => {
-
-      const updated =
-        [...shots]
-
-      const shotIndex =
-        updated.findIndex(
-          (
-            shot
-          ) =>
-            shot.name ===
-            shotName
-        )
-
-      if (
-        shotIndex === -1
-      )
-        return
-
-      updated[
-        shotIndex
-      ].status =
-        newStatus
-
-      setShots(
-        updated
-      )
 
       const grouped:
         Record<
           string,
-          Shot[]
+          any[]
         > = {}
 
       updated.forEach(
@@ -138,16 +124,7 @@ export default function Kanban() {
           grouped[
             shot.projectId
           ].push({
-            name:
-              shot.name,
-            artist:
-              shot.artist,
-            status:
-              shot.status,
-            priority:
-              shot.priority,
-            dueDate:
-              shot.dueDate
+            ...shot
           })
         }
       )
@@ -159,15 +136,80 @@ export default function Kanban() {
           projectId
         ) => {
 
+          const cleaned =
+            grouped[
+              projectId
+            ].map(
+              (
+                shot
+              ) => {
+
+                const {
+                  projectId,
+                  ...rest
+                } = shot
+
+                return rest
+              }
+            )
+
           localStorage.setItem(
             `pbs_shots_${projectId}`,
             JSON.stringify(
-              grouped[
-                projectId
-              ]
+              cleaned
             )
           )
         }
+      )
+    }
+
+  const onDragEnd =
+    (
+      result:
+        any
+    ) => {
+
+      if (
+        !result.destination
+      ) return
+
+      const shotName =
+        result
+          .draggableId
+
+      const newStatus =
+        result
+          .destination
+          .droppableId
+
+      const updated =
+        shots.map(
+          (
+            shot
+          ) => {
+
+            if (
+              shot.name ===
+              shotName
+            ) {
+
+              return {
+                ...shot,
+                status:
+                  newStatus
+              }
+            }
+
+            return shot
+          }
+        )
+
+      setShots(
+        updated
+      )
+
+      saveShots(
+        updated
       )
     }
 
@@ -197,159 +239,183 @@ export default function Kanban() {
             "#888"
         }}
       >
-        Drag style
-        pipeline board
+        Real Drag &
+        Drop
+        Pipeline
       </p>
 
-      <div
-        style={{
-          display:
-            "flex",
-          gap:
-            "20px",
-          overflowX:
-            "auto",
-          marginTop:
-            "30px"
-        }}
+      <DragDropContext
+        onDragEnd={
+          onDragEnd
+        }
       >
 
-        {columns.map(
-          (
-            column
-          ) => (
+        <div
+          style={{
+            display:
+              "flex",
+            gap:
+              "20px",
+            overflowX:
+              "auto",
+            marginTop:
+              "30px"
+          }}
+        >
 
-            <div
-              key={column}
-              style={{
-                minWidth:
-                  "320px",
-                background:
-                  "#171717",
-                borderRadius:
-                  "20px",
-                padding:
-                  "20px"
-              }}
-            >
+          {columns.map(
+            (
+              column
+            ) => (
 
-              <h2>
-                {
+              <Droppable
+                key={
                   column
                 }
-              </h2>
+                droppableId={
+                  column
+                }
+              >
 
-              {shots
-                .filter(
-                  (
-                    shot
-                  ) =>
-                    shot.status ===
-                    column
-                )
-                .map(
-                  (
-                    shot
-                  ) => (
+                {(
+                  provided
+                ) => (
 
-                    <div
-                      key={
-                        shot.name
+                  <div
+                    ref={
+                      provided.innerRef
+                    }
+                    {
+                      ...provided.droppableProps
+                    }
+                    style={{
+                      minWidth:
+                        "320px",
+                      background:
+                        "#171717",
+                      borderRadius:
+                        "20px",
+                      padding:
+                        "20px",
+                      minHeight:
+                        "500px"
+                    }}
+                  >
+
+                    <h2>
+                      {
+                        column
                       }
-                      style={{
-                        background:
-                          "#252525",
-                        padding:
-                          "16px",
-                        borderRadius:
-                          "16px",
-                        marginTop:
-                          "15px"
-                      }}
-                    >
+                    </h2>
 
-                      <h3>
-                        {
-                          shot.name
-                        }
-                      </h3>
-
-                      <p>
-                        Artist:
-                        {" "}
-                        {
-                          shot.artist
-                        }
-                      </p>
-
-                      <p>
-                        Due:
-                        {" "}
-                        {
-                          shot.dueDate
-                        }
-                      </p>
-
-                      <select
-                        value={
-                          shot.status
-                        }
-                        onChange={(
-                          e
+                    {shots
+                      .filter(
+                        (
+                          shot
                         ) =>
-                          moveShot(
-                            shot.name,
-                            e.target
-                              .value
-                          )
-                        }
-                        style={{
-                          width:
-                            "100%",
-                          padding:
-                            "10px",
-                          borderRadius:
-                            "10px",
-                          background:
-                            "#111",
-                          color:
-                            "white",
-                          border:
-                            "1px solid #333"
-                        }}
-                      >
+                          shot.status ===
+                          column
+                      )
+                      .map(
+                        (
+                          shot,
+                          index
+                        ) => (
 
-                        {columns.map(
-                          (
-                            item
-                          ) => (
+                          <Draggable
+                            key={
+                              shot.name
+                            }
+                            draggableId={
+                              shot.name
+                            }
+                            index={
+                              index
+                            }
+                          >
 
-                            <option
-                              key={
-                                item
-                              }
-                              value={
-                                item
-                              }
-                            >
-                              {
-                                item
-                              }
-                            </option>
-                          )
-                        )}
+                            {(
+                              provided
+                            ) => (
 
-                      </select>
+                              <div
+                                ref={
+                                  provided.innerRef
+                                }
+                                {
+                                  ...provided.draggableProps
+                                }
+                                {
+                                  ...provided.dragHandleProps
+                                }
+                                style={{
+                                  background:
+                                    "#252525",
+                                  padding:
+                                    "16px",
+                                  borderRadius:
+                                    "16px",
+                                  marginTop:
+                                    "15px",
+                                  cursor:
+                                    "grab",
+                                  ...provided
+                                    .draggableProps
+                                    .style
+                                }}
+                              >
 
-                    </div>
-                  )
+                                <h3>
+                                  {
+                                    shot.name
+                                  }
+                                </h3>
+
+                                <p>
+                                  Artist:
+                                  {" "}
+                                  {
+                                    shot.artist
+                                  }
+                                </p>
+
+                                <p>
+                                  Due:
+                                  {" "}
+                                  {
+                                    shot.dueDate
+                                  }
+                                </p>
+
+                                <p>
+                                  Priority:
+                                  {" "}
+                                  {
+                                    shot.priority
+                                  }
+                                </p>
+
+                              </div>
+                            )}
+
+                          </Draggable>
+                        )
+                      )}
+
+                    {
+                      provided.placeholder
+                    }
+
+                  </div>
                 )}
 
-            </div>
-          )
-        )}
+              </Droppable>
+            )
+          )}
 
-      </div>
+        </div>
+
+      </DragDropContext>
 
     </div>
   )
