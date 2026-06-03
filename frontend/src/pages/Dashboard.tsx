@@ -1,13 +1,21 @@
-import { useEffect, useState }
-from "react"
+import {
+  useEffect,
+  useState
+} from "react"
 
-import { useNavigate }
-from "react-router-dom"
+import {
+  useNavigate
+} from "react-router-dom"
 
 type Shot = {
   status: string
   dueDate?: string
   artist?: string
+  clientReview?: string
+  supervisorReview?: {
+    status: string
+    notes: string
+  }
 }
 
 type User = {
@@ -16,10 +24,29 @@ type User = {
   name: string
 }
 
+type Notification = {
+  id: number
+  title: string
+  type: string
+}
+
+type Analytics = {
+  completionRate: number
+  deliveryRate: number
+  overdueRate: number
+  avgTimeline: number
+}
+
 export default function Dashboard() {
 
   const navigate =
     useNavigate()
+
+  const [user,
+    setUser] =
+    useState<User | null>(
+      null
+    )
 
   const [projectCount,
     setProjectCount] =
@@ -57,11 +84,37 @@ export default function Dashboard() {
     setOverdue] =
     useState(0)
 
-  const [user,
-    setUser] =
-    useState<User | null>(
-      null
-    )
+  const [notifications,
+    setNotifications] =
+    useState<
+      Notification[]
+    >([])
+
+  const [showNotifications,
+    setShowNotifications] =
+    useState(false)
+
+  const [analytics,
+    setAnalytics] =
+    useState<Analytics>({
+      completionRate:
+        0,
+      deliveryRate:
+        0,
+      overdueRate:
+        0,
+      avgTimeline:
+        0
+    })
+
+  const [artistWorkload,
+    setArtistWorkload] =
+    useState<
+      Record<
+        string,
+        number
+      >
+    >({})
 
   useEffect(() => {
 
@@ -109,14 +162,10 @@ export default function Dashboard() {
     let shotCount =
       0
 
-    let wip =
-      0
-
-    let review =
-      0
-
-    let delivered =
-      0
+    let wip = 0
+    let review = 0
+    let delivered = 0
+    let approved = 0
 
     let todayCount =
       0
@@ -127,11 +176,21 @@ export default function Dashboard() {
     let overdueCount =
       0
 
+    const workload:
+      Record<
+        string,
+        number
+      > = {}
+
+    const alerts:
+      Notification[] =
+      []
+
     const today =
       new Date()
 
     today.setHours(
-      0, 0, 0, 0
+      0,0,0,0
     )
 
     const tomorrow =
@@ -142,7 +201,7 @@ export default function Dashboard() {
     )
 
     tomorrow.setHours(
-      0, 0, 0, 0
+      0,0,0,0
     )
 
     Object.keys(
@@ -174,9 +233,12 @@ export default function Dashboard() {
                   (
                     shot
                   ) =>
-                    shot.artist?.toLowerCase()
+                    shot.artist
+                      ?.toLowerCase()
                     ===
-                    savedUser.name.toLowerCase()
+                    savedUser
+                      .name
+                      .toLowerCase()
                 )
 
               : shots
@@ -188,6 +250,19 @@ export default function Dashboard() {
             (
               shot
             ) => {
+
+              if (
+                shot.artist
+              ) {
+
+                workload[
+                  shot.artist
+                ] = (
+                  workload[
+                    shot.artist
+                  ] || 0
+                ) + 1
+              }
 
               if (
                 shot.status ===
@@ -211,6 +286,13 @@ export default function Dashboard() {
               }
 
               if (
+                shot.status ===
+                "Approved"
+              ) {
+                approved++
+              }
+
+              if (
                 shot.dueDate
               ) {
 
@@ -227,6 +309,7 @@ export default function Dashboard() {
                   due.getTime() ===
                   today.getTime()
                 ) {
+
                   todayCount++
                 }
 
@@ -234,6 +317,7 @@ export default function Dashboard() {
                   due.getTime() ===
                   tomorrow.getTime()
                 ) {
+
                   tomorrowCount++
                 }
 
@@ -243,13 +327,75 @@ export default function Dashboard() {
                   shot.status !==
                   "Delivered"
                 ) {
+
                   overdueCount++
+
+                  alerts.push({
+                    id:
+                      Date.now() +
+                      Math.random(),
+
+                    title:
+                      "Overdue Shot",
+
+                    type:
+                      "overdue"
+                  })
+                }
+              }
+
+              if (
+                savedUser.role !==
+                "artist"
+              ) {
+
+                if (
+                  shot
+                    .supervisorReview
+                    ?.status ===
+                  "Pending"
+                ) {
+
+                  alerts.push({
+                    id:
+                      Date.now() +
+                      Math.random(),
+
+                    title:
+                      "Supervisor Review Pending",
+
+                    type:
+                      "supervisor"
+                  })
+                }
+
+                if (
+                  shot.clientReview ===
+                    "Pending" ||
+                  !shot.clientReview
+                ) {
+
+                  alerts.push({
+                    id:
+                      Date.now() +
+                      Math.random(),
+
+                    title:
+                      "Client Review Pending",
+
+                    type:
+                      "client"
+                  })
                 }
               }
             }
           )
         }
       }
+    )
+
+    setNotifications(
+      alerts
     )
 
     setTotalShots(
@@ -280,7 +426,49 @@ export default function Dashboard() {
       overdueCount
     )
 
-  }, [navigate])
+    setArtistWorkload(
+      workload
+    )
+
+    setAnalytics({
+      completionRate:
+        shotCount > 0
+          ? Math.round(
+              (
+                approved /
+                shotCount
+              ) * 100
+            )
+          : 0,
+
+      deliveryRate:
+        shotCount > 0
+          ? Math.round(
+              (
+                delivered /
+                shotCount
+              ) * 100
+            )
+          : 0,
+
+      overdueRate:
+        shotCount > 0
+          ? Math.round(
+              (
+                overdueCount /
+                shotCount
+              ) * 100
+            )
+          : 0,
+
+      avgTimeline:
+        todayCount +
+        tomorrowCount
+    })
+
+  }, [
+    navigate
+  ])
 
   const logout =
     () => {
@@ -322,16 +510,55 @@ export default function Dashboard() {
         }}
       >
 
-        <h1
+        <div
           style={{
-            color:
-              "#FF7A00",
-            marginBottom:
-              "10px"
+            display:
+              "flex",
+            justifyContent:
+              "space-between",
+            alignItems:
+              "center"
           }}
         >
-          PBS
-        </h1>
+
+          <h1
+            style={{
+              color:
+                "#FF7A00"
+            }}
+          >
+            PBS
+          </h1>
+
+          <button
+            onClick={() =>
+              setShowNotifications(
+                !showNotifications
+              )
+            }
+            style={{
+              background:
+                "#1C1C1C",
+              border:
+                "none",
+              color:
+                "white",
+              borderRadius:
+                "10px",
+              padding:
+                "10px",
+              cursor:
+                "pointer"
+            }}
+          >
+            🔔
+            {" "}
+            {
+              notifications.length
+            }
+          </button>
+
+        </div>
 
         <p
           style={{
@@ -347,69 +574,9 @@ export default function Dashboard() {
         </p>
 
         <div
-          style={menuItem}
-          onClick={() =>
-            navigate(
-              "/dashboard"
-            )
+          style={
+            menuItem
           }
-        >
-          Dashboard
-        </div>
-
-        {(user?.role ===
-          "admin" ||
-          user?.role ===
-          "supervisor") && (
-
-          <>
-            <div
-              style={menuItem}
-              onClick={() =>
-                navigate(
-                  "/projects"
-                )
-              }
-            >
-              Projects
-            </div>
-
-            <div
-              style={menuItem}
-              onClick={() =>
-                navigate(
-                  "/kanban"
-                )
-              }
-            >
-              Kanban
-            </div>
-          </>
-        )}
-
-        {user?.role ===
-          "admin" && (
-
-          <div
-            style={menuItem}
-            onClick={() =>
-              navigate(
-                "/artists"
-              )
-            }
-          >
-            Artists
-          </div>
-        )}
-
-        <div
-          style={{
-            ...menuItem,
-            marginTop:
-              "30px",
-            background:
-              "#DC2626"
-          }}
           onClick={
             logout
           }
@@ -427,55 +594,25 @@ export default function Dashboard() {
         }}
       >
 
-        <h1>
-          Welcome,
-          {" "}
-          {
-            user?.name
-          }
-        </h1>
-
-        <p
-          style={{
-            color:
-              "#888"
-          }}
-        >
-          Production
-          Dashboard
-        </p>
-
-        {overdue > 0 && (
-
-          <div
-            style={{
-              background:
-                "#DC2626",
-              padding:
-                "15px",
-              borderRadius:
-                "15px",
-              marginTop:
-                "20px",
-              fontWeight:
-                "bold"
-            }}
-          >
-            ⚠{" "}
-            {
-              overdue
-            }
-            {" "}
-            Overdue Shots
-          </div>
-        )}
+        <h1
+  style={{
+    color:
+      "white"
+  }}
+>
+  Welcome,
+  {" "}
+  {
+    user?.name
+  }
+</h1>
 
         <div
           style={{
             display:
               "grid",
             gridTemplateColumns:
-              "repeat(3,1fr)",
+              "repeat(4,1fr)",
             gap:
               "20px",
             marginTop:
@@ -484,64 +621,192 @@ export default function Dashboard() {
         >
 
           <div style={card}>
-            <h3>Projects</h3>
-            <h1>{projectCount}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>Artists</h3>
-            <h1>{artistCount}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>Total Shots</h3>
-            <h1>{totalShots}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>WIP</h3>
-            <h1>{wipShots}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>Review</h3>
-            <h1>{reviewShots}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>Delivered</h3>
-            <h1>{deliveredShots}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>📅 Due Today</h3>
-            <h1>{dueToday}</h1>
-          </div>
-
-          <div style={card}>
-            <h3>⏰ Tomorrow</h3>
-            <h1>{dueTomorrow}</h1>
-          </div>
-
-          <div
-            style={{
-              ...card,
-              border:
-                overdue > 0
-                  ? "2px solid red"
-                  : "none"
-            }}
-          >
             <h3>
-              ⚠ Overdue
+              Projects
             </h3>
-
             <h1>
-              {overdue}
+              {
+                projectCount
+              }
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Artists
+            </h3>
+            <h1>
+              {
+                artistCount
+              }
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Shots
+            </h3>
+            <h1>
+              {
+                totalShots
+              }
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Overdue
+            </h3>
+            <h1>
+              {
+                overdue
+              }
             </h1>
           </div>
 
         </div>
+
+        <h2
+  style={{
+    marginTop:
+      "40px",
+    color:
+      "white"
+  }}
+>
+  Analytics
+</h2>
+
+        <div
+          style={{
+            display:
+              "grid",
+            gridTemplateColumns:
+              "repeat(4,1fr)",
+            gap:
+              "20px",
+            marginTop:
+              "20px"
+          }}
+        >
+
+          <div style={card}>
+            <h3>
+              Completion
+            </h3>
+            <h1>
+              {
+                analytics
+                  .completionRate
+              }%
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Delivery
+            </h3>
+            <h1>
+              {
+                analytics
+                  .deliveryRate
+              }%
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Overdue
+            </h3>
+            <h1>
+              {
+                analytics
+                  .overdueRate
+              }%
+            </h1>
+          </div>
+
+          <div style={card}>
+            <h3>
+              Timeline
+            </h3>
+            <h1>
+              {
+                analytics
+                  .avgTimeline
+              }
+            </h1>
+          </div>
+
+        </div>
+
+        {user?.role !==
+          "artist" && (
+
+          <>
+           <h2
+  style={{
+    marginTop:
+      "40px",
+    color:
+      "white"
+  }}
+>
+  Artist
+  Workload
+</h2>
+
+            {Object.entries(
+              artistWorkload
+            ).map(
+              (
+                [
+                  artist,
+                  count
+                ]
+              ) => (
+
+                <div
+                  key={
+                    artist
+                  }
+                  style={{
+                    ...card,
+                    marginTop:
+                      "15px"
+                  }}
+                >
+
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      justifyContent:
+                        "space-between"
+                    }}
+                  >
+
+                    <strong>
+                      {
+                        artist
+                      }
+                    </strong>
+
+                    <span>
+                      {
+                        count
+                      }
+                      {" "}
+                      shots
+                    </span>
+
+                  </div>
+
+                </div>
+              )
+            )}
+          </>
+        )}
 
       </div>
 
@@ -568,5 +833,8 @@ const card = {
   padding:
     "20px",
   borderRadius:
-    "20px"
+    "20px",
+  color:
+    "white"
 }
+
