@@ -4,12 +4,26 @@ import {
   Route
 } from "react-router-dom"
 
-import Login from "./pages/Login"
-import Dashboard from "./pages/Dashboard"
-import Artists from "./pages/Artists"
-import Projects from "./pages/Projects"
-import ProjectDetails from "./pages/ProjectDetails"
-import Kanban from "./pages/Kanban"
+import Login
+from "./pages/Login"
+
+import Dashboard
+from "./pages/Dashboard"
+
+import Artists
+from "./pages/Artists"
+
+import Projects
+from "./pages/Projects"
+
+import ProjectDetails
+from "./pages/ProjectDetails"
+
+import Kanban
+from "./pages/Kanban"
+
+import ArtistShots
+from "./pages/ArtistShots"
 
 export default function App() {
 
@@ -34,16 +48,16 @@ export default function App() {
         />
 
         <Route
-          path="/artists"
+          path="/projects"
           element={
-            <Artists />
+            <Projects />
           }
         />
 
         <Route
-          path="/projects"
+          path="/artists"
           element={
-            <Projects />
+            <Artists />
           }
         />
 
@@ -58,6 +72,13 @@ export default function App() {
           path="/kanban"
           element={
             <Kanban />
+          }
+        />
+
+        <Route
+          path="/artist-shots"
+          element={
+            <ArtistShots />
           }
         />
 
