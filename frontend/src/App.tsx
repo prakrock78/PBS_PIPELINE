@@ -31,6 +31,9 @@ from "./pages/Timeline"
 import ClientPortal
 from "./pages/ClientPortal"
 
+import LeadQC
+from "./pages/LeadQC"
+
 export default function App() {
 
   return (
@@ -99,6 +102,13 @@ export default function App() {
           path="/client-portal"
           element={
             <ClientPortal />
+          }
+        />
+
+        <Route
+          path="/lead-qc"
+          element={
+            <LeadQC />
           }
         />
 

@@ -1,5 +1,11 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import {
+  useState,
+  useEffect
+} from "react"
+
+import {
+  useNavigate
+} from "react-router-dom"
 
 type Project = {
   id: number
@@ -18,6 +24,12 @@ export default function Projects() {
     setShowForm] =
     useState(false)
 
+  const [projects,
+    setProjects] =
+    useState<Project[]>(
+      []
+    )
+
   const [projectName,
     setProjectName] =
     useState("")
@@ -32,69 +44,43 @@ export default function Projects() {
 
   const [status,
     setStatus] =
-    useState("Active")
+    useState(
+      "Active"
+    )
 
-  const [projects,
-    setProjects] =
-    useState<Project[]>(
-      () => {
+  const loadProjects =
+    async () => {
 
-        const saved =
-          localStorage.getItem(
-            "pbs_projects"
+      try {
+
+        const res =
+          await fetch(
+            "http://127.0.0.1:8000/projects"
           )
 
-        if (saved) {
+        const data =
+          await res.json()
 
-          try {
+        setProjects(
+          data
+        )
 
-            const parsed =
-              JSON.parse(saved)
+      } catch {
 
-            if (
-              Array.isArray(
-                parsed
-              )
-            ) {
-              return parsed
-            }
-
-          } catch {
-            console.log(
-              "Project parse error"
-            )
-          }
-        }
-
-        return [
-          {
-            id: 1,
-            name:
-              "Netflix Ad",
-            client:
-              "Netflix",
-            deadline:
-              "2026-06-10",
-            status:
-              "Active"
-          }
-        ]
+        alert(
+          "Failed to load projects"
+        )
       }
-    )
+    }
 
   useEffect(() => {
 
-    localStorage.setItem(
-      "pbs_projects",
-      JSON.stringify(
-        projects
-      )
-    )
+    loadProjects()
 
-  }, [projects])
+  }, [])
 
   const addProject =
-    () => {
+    async () => {
 
       if (
         !projectName ||
@@ -109,46 +95,71 @@ export default function Projects() {
         return
       }
 
-      const newProject = {
+      try {
 
-        id:
-          Date.now(),
+        const res =
+          await fetch(
+            "http://127.0.0.1:8000/projects",
+            {
+              method:
+                "POST",
 
-        name:
-          projectName,
+              headers: {
+                "Content-Type":
+                "application/json"
+              },
 
-        client:
-          clientName,
+              body:
+                JSON.stringify({
+                  name:
+                    projectName,
 
-        deadline,
+                  client:
+                    clientName,
 
-        status
+                  deadline,
+
+                  status
+                })
+            }
+          )
+
+        if (
+          !res.ok
+        ) {
+
+          alert(
+            "Project create failed"
+          )
+
+          return
+        }
+
+        setProjectName("")
+        setClientName("")
+        setDeadline("")
+        setStatus(
+          "Active"
+        )
+
+        setShowForm(
+          false
+        )
+
+        loadProjects()
+
+      } catch {
+
+        alert(
+          "Server Error"
+        )
       }
-
-      setProjects(
-        (
-          prev
-        ) => [
-          ...prev,
-          newProject
-        ]
-      )
-
-      setProjectName("")
-      setClientName("")
-      setDeadline("")
-      setStatus(
-        "Active"
-      )
-
-      setShowForm(
-        false
-      )
     }
 
   const openProject =
     (
-      project: Project
+      project:
+      Project
     ) => {
 
       localStorage.setItem(
@@ -168,24 +179,24 @@ export default function Projects() {
     <div
       style={{
         background:
-          "#0B0B0B",
+        "#0B0B0B",
         minHeight:
-          "100vh",
+        "100vh",
         color:
-          "white",
+        "white",
         padding:
-          "30px"
+        "30px"
       }}
     >
 
       <div
         style={{
           display:
-            "flex",
+          "flex",
           justifyContent:
-            "space-between",
+          "space-between",
           alignItems:
-            "center"
+          "center"
         }}
       >
 
@@ -195,15 +206,6 @@ export default function Projects() {
             Projects
           </h1>
 
-          <p
-            style={{
-              color:
-                "#888"
-            }}
-          >
-            Manage Projects
-          </p>
-
         </div>
 
         <button
@@ -212,7 +214,9 @@ export default function Projects() {
               true
             )
           }
-          style={addBtn}
+          style={
+            addBtn
+          }
         >
           + Add Project
         </button>
@@ -222,13 +226,13 @@ export default function Projects() {
       <div
         style={{
           display:
-            "grid",
+          "grid",
           gridTemplateColumns:
-            "repeat(3,1fr)",
+          "repeat(3,1fr)",
           gap:
-            "20px",
+          "20px",
           marginTop:
-            "30px"
+          "30px"
         }}
       >
 
@@ -241,7 +245,9 @@ export default function Projects() {
               key={
                 project.id
               }
-              style={card}
+              style={
+                card
+              }
               onClick={() =>
                 openProject(
                   project
@@ -271,16 +277,6 @@ export default function Projects() {
                 }
               </p>
 
-              <span
-                style={
-                  statusStyle
-                }
-              >
-                {
-                  project.status
-                }
-              </span>
-
             </div>
           )
         )}
@@ -290,11 +286,15 @@ export default function Projects() {
       {showForm && (
 
         <div
-          style={overlay}
+          style={
+            overlay
+          }
         >
 
           <div
-            style={popup}
+            style={
+              popup
+            }
           >
 
             <h2>
@@ -309,10 +309,10 @@ export default function Projects() {
               }
               onChange={
                 (e) =>
-                  setProjectName(
-                    e.target
-                      .value
-                  )
+                setProjectName(
+                  e.target
+                    .value
+                )
               }
               style={
                 inputStyle
@@ -327,10 +327,10 @@ export default function Projects() {
               }
               onChange={
                 (e) =>
-                  setClientName(
-                    e.target
-                      .value
-                  )
+                setClientName(
+                  e.target
+                    .value
+                )
               }
               style={
                 inputStyle
@@ -344,10 +344,10 @@ export default function Projects() {
               }
               onChange={
                 (e) =>
-                  setDeadline(
-                    e.target
-                      .value
-                  )
+                setDeadline(
+                  e.target
+                    .value
+                )
               }
               style={
                 inputStyle
@@ -376,86 +376,75 @@ export default function Projects() {
 
 const card = {
   background:
-    "#171717",
+  "#171717",
   padding:
-    "20px",
+  "20px",
   borderRadius:
-    "20px",
+  "20px",
   cursor:
-    "pointer",
-  transition:
-    "0.2s"
-}
-
-const statusStyle = {
-  background:
-    "#FF7A00",
-  padding:
-    "6px 12px",
-  borderRadius:
-    "10px"
+  "pointer"
 }
 
 const addBtn = {
   background:
-    "#FF7A00",
+  "#FF7A00",
   border:
-    "none",
+  "none",
   color:
-    "white",
+  "white",
   padding:
-    "12px 20px",
+  "12px 20px",
   borderRadius:
-    "10px",
+  "10px",
   cursor:
-    "pointer"
+  "pointer"
 }
 
 const overlay = {
   position:
-    "fixed" as const,
+  "fixed" as const,
   top: 0,
   left: 0,
   width:
-    "100%",
+  "100%",
   height:
-    "100%",
+  "100%",
   background:
-    "rgba(0,0,0,0.8)",
+  "rgba(0,0,0,0.8)",
   display:
-    "flex",
+  "flex",
   justifyContent:
-    "center",
+  "center",
   alignItems:
-    "center"
+  "center"
 }
 
 const popup = {
   width:
-    "400px",
+  "400px",
   background:
-    "#171717",
+  "#171717",
   padding:
-    "30px",
+  "30px",
   borderRadius:
-    "20px"
+  "20px"
 }
 
 const inputStyle = {
   width:
-    "100%",
+  "100%",
   padding:
-    "12px",
+  "12px",
   marginTop:
-    "15px",
+  "15px",
   background:
-    "#252525",
+  "#252525",
   border:
-    "1px solid #333",
+  "1px solid #333",
   color:
-    "white",
+  "white",
   borderRadius:
-    "10px",
+  "10px",
   boxSizing:
-    "border-box" as const
+  "border-box" as const
 }

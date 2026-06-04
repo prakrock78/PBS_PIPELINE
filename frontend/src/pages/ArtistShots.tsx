@@ -1,323 +1,116 @@
-import { useEffect, useRef, useState }
-from "react"
-
-type Version = {
-  id: number
-  version: string
-  fileName: string
-  fileUrl?: string
-  fileType?: string
-  notes: string
-  uploadedAt: string
-}
+import {
+  useEffect,
+  useState
+} from "react"
 
 type Shot = {
+  id?: number
   name: string
   artist: string
   status: string
   priority: string
-  dueDate: string
-
-  clientReview?: string
-  clientNotes?: string
-  reviewHistory?: any[]
-  supervisorReview?: any
-
-  versions?: Version[]
-}
-
-type User = {
-  email: string
-  role: string
-  name: string
+  due_date: string
+  lead_note?: string
+  supervisor_note?: string
 }
 
 export default function ArtistShots() {
 
   const [shots,
     setShots] =
-    useState<
-      (Shot & {
-        projectId: string
-      })[]
-    >([])
-
-  const [user,
-    setUser] =
-    useState<User | null>(
-      null
-    )
-
-  const fileInputRef =
-    useRef<HTMLInputElement | null>(
-      null
-    )
-
-  const [selectedShot,
-    setSelectedShot] =
-    useState<string | null>(
-      null
+    useState<Shot[]>(
+      []
     )
 
   const loadShots =
-    (
-      savedUser:
-        User
-    ) => {
+    async () => {
 
-      const assignedShots:
-        (Shot & {
-          projectId: string
-        })[] = []
+      const user =
+        JSON.parse(
+          localStorage.getItem(
+            "pbs_user"
+          ) || "{}"
+        )
 
-      Object.keys(
-        localStorage
-      ).forEach(
-        (
-          key
-        ) => {
+      try {
 
-          if (
-            key.startsWith(
-              "pbs_shots_"
-            )
-          ) {
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/shots"
+          )
 
-            const projectId =
-              key.replace(
-                "pbs_shots_",
-                ""
-              )
+        const data =
+          await response.json()
 
-            const savedShots:
-              Shot[] =
-              JSON.parse(
-                localStorage.getItem(
-                  key
-                ) || "[]"
-              )
+        const assignedShots =
+          data.filter(
+            (
+              shot: any
+            ) =>
+              shot.artist
+                ?.toLowerCase()
+                .includes(
+              user.name
+                ?.toLowerCase()
+                .trim()
+          )
 
-            savedShots.forEach(
-              (
-                shot
-              ) => {
+        )
 
-                if (
-                  shot.artist
-                    ?.toLowerCase() ===
-                  savedUser.name
-                    .toLowerCase()
-                ) {
+        setShots(
+          assignedShots
+        )
 
-                  assignedShots.push({
-                    ...shot,
-                    versions:
-                      shot.versions || [],
-                    projectId
-                  })
-                }
-              }
-            )
-          }
-        }
-      )
+      } catch {
 
-      setShots(
-        assignedShots
-      )
+        alert(
+          "Failed to load shots"
+        )
+      }
     }
 
   useEffect(() => {
 
-    const savedUser =
-      JSON.parse(
-        localStorage.getItem(
-          "pbs_user"
-        ) || "null"
-      )
-
-    if (
-      !savedUser
-    ) return
-
-    setUser(
-      savedUser
-    )
-
-    loadShots(
-      savedUser
-    )
+    loadShots()
 
   }, [])
 
-  const openFilePicker =
-    (
-      shotName:
+  const updateStatus =
+    async (
+      shotId:
+        number,
+      status:
         string
     ) => {
 
-      setSelectedShot(
-        shotName
-      )
+      try {
 
-      fileInputRef
-        .current
-        ?.click()
-    }
+        await fetch(
+          `http://127.0.0.1:8000/workflow/shot/${shotId}`,
+          {
+            method:
+              "PUT",
 
-  const handleFileUpload =
-    (
-      e:
-        React.ChangeEvent<
-          HTMLInputElement
-        >
-    ) => {
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-      const file =
-        e.target
-          .files?.[0]
-
-      if (
-        !file ||
-        !selectedShot
-      ) return
-
-      const notes =
-        prompt(
-          "Version Notes"
-        ) || ""
-
-      const fileUrl =
-        URL.createObjectURL(
-          file
+            body:
+              JSON.stringify({
+                status
+              })
+          }
         )
 
-      const updated =
-        [...shots]
+        loadShots()
 
-      const index =
-        updated.findIndex(
-          (
-            shot
-          ) =>
-            shot.name ===
-            selectedShot
-        )
+      } catch {
 
-      if (
-        index === -1
-      ) return
-
-      if (
-        !updated[index]
-          .versions
-      ) {
-
-        updated[index]
-          .versions = []
-      }
-
-      const versionCount =
-        updated[index]
-          .versions!
-          .length + 1
-
-      updated[index]
-        .versions!
-        .push({
-
-        id:
-          Date.now(),
-
-        version:
-          `v${String(
-            versionCount
-          ).padStart(
-            3,
-            "0"
-          )}`,
-
-        fileName:
-          file.name,
-
-        fileUrl,
-
-        fileType:
-          file.type,
-
-        notes,
-
-        uploadedAt:
-          new Date()
-            .toLocaleString()
-      })
-
-      setShots(
-        [...updated]
-      )
-
-      updated.forEach(
-        (
-          shot
-        ) => {
-
-          const storageKey =
-            `pbs_shots_${shot.projectId}`
-
-          const existingShots:
-            any[] =
-            JSON.parse(
-              localStorage.getItem(
-                storageKey
-              ) || "[]"
-            )
-
-          const updatedShots =
-            existingShots.map(
-              (
-                existingShot
-              ) => {
-
-                if (
-                  existingShot.name ===
-                  shot.name
-                ) {
-
-                  return {
-                    ...existingShot,
-                    versions:
-                      shot.versions
-                  }
-                }
-
-                return existingShot
-              }
-            )
-
-          localStorage.setItem(
-            storageKey,
-            JSON.stringify(
-              updatedShots
-            )
-          )
-        }
-      )
-
-      alert(
-        "Version Uploaded"
-      )
-
-      if (
-        user
-      ) {
-
-        loadShots(
-          user
+        alert(
+          "Status update failed"
         )
       }
-
-      e.target.value =
-        ""
     }
 
   return (
@@ -339,49 +132,29 @@ export default function ArtistShots() {
         My Shots
       </h1>
 
-      <p
-        style={{
-          color:
-            "#888"
-        }}
-      >
-        Welcome,
-        {" "}
-        {
-          user?.name
-        }
-      </p>
+      {shots.length ===
+      0 ? (
 
-      <input
-        ref={
-          fileInputRef
-        }
-        type="file"
-        style={{
-          display:
-            "none"
-        }}
-        accept="image/*,video/*"
-        onChange={
-          handleFileUpload
-        }
-      />
+        <p
+          style={{
+            color:
+              "#888"
+          }}
+        >
+          No shot assigned
+        </p>
 
-      <div
-        style={{
-          marginTop:
-            "30px"
-        }}
-      >
+      ) : (
 
-        {shots.map(
+        shots.map(
           (
-            shot
+            shot,
+            index
           ) => (
 
             <div
               key={
-                shot.name
+                index
               }
               style={{
                 background:
@@ -389,8 +162,8 @@ export default function ArtistShots() {
                 padding:
                   "20px",
                 borderRadius:
-                  "20px",
-                marginBottom:
+                  "16px",
+                marginTop:
                   "20px"
               }}
             >
@@ -402,6 +175,14 @@ export default function ArtistShots() {
               </h2>
 
               <p>
+                Artist:
+                {" "}
+                {
+                  shot.artist
+                }
+              </p>
+
+              <p>
                 Status:
                 {" "}
                 {
@@ -410,53 +191,134 @@ export default function ArtistShots() {
               </p>
 
               <p>
-                Due:
+                Priority:
                 {" "}
                 {
-                  shot.dueDate
+                  shot.priority
                 }
               </p>
 
               <p>
-                Versions:
+                Due Date:
                 {" "}
                 {
-                  shot.versions
-                    ?.length || 0
+                  shot.due_date
                 }
               </p>
 
-              <button
-                onClick={() =>
-                  openFilePicker(
-                    shot.name
-                  )
-                }
+              <div
                 style={{
-                  background:
-                    "#FF7A00",
-                  border:
-                    "none",
-                  color:
-                    "white",
-                  padding:
-                    "12px 18px",
-                  borderRadius:
-                    "10px",
-                  cursor:
-                    "pointer",
                   marginTop:
-                    "15px"
+                    "20px",
+                  display:
+                    "flex",
+                  gap:
+                    "10px"
                 }}
               >
-                Upload Version
-              </button>
+
+                {shot.status
+                  ?.toLowerCase() ===
+                "assigned" && (
+
+                  <button
+                    onClick={() =>
+                      updateStatus(
+                        shot.id!,
+                        "WIP"
+                      )
+                    }
+                    style={{
+                      background:
+                        "#2563EB",
+                      border:
+                        "none",
+                      color:
+                        "white",
+                      padding:
+                        "10px 16px",
+                      borderRadius:
+                        "10px",
+                      cursor:
+                        "pointer"
+                    }}
+                  >
+                    Start Work
+                  </button>
+                )}
+
+                {shot.status
+                  ?.toLowerCase() ===
+                "wip" && (
+
+                  <button
+                    onClick={() =>
+                      updateStatus(
+                        shot.id!,
+                        "DONE"
+                      )
+                    }
+                    style={{
+                      background:
+                        "#16A34A",
+                      border:
+                        "none",
+                      color:
+                        "white",
+                      padding:
+                        "10px 16px",
+                      borderRadius:
+                        "10px",
+                      cursor:
+                        "pointer"
+                    }}
+                  >
+                    Mark Done
+                  </button>
+                )}
+
+                {(
+  shot.status
+    ?.toLowerCase() ===
+  "lead_kickback" ||
+
+  shot.status
+    ?.toLowerCase() ===
+  "sup_kickback"
+) && (
+
+  <button
+    onClick={() =>
+      updateStatus(
+        shot.id!,
+        "WIP"
+      )
+    }
+    style={{
+      background:
+        "#DC2626",
+      border:
+        "none",
+      color:
+        "white",
+      padding:
+        "10px 16px",
+      borderRadius:
+        "10px",
+      cursor:
+        "pointer"
+    }}
+  >
+    Rework Shot
+  </button>
+)}
+
+              </div>
 
             </div>
           )
-        )}
-
-      </div>
+        )
+      )}
 
     </div>
   )

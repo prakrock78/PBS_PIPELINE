@@ -10,11 +10,6 @@ type Review = {
   reviewedAt: string
 }
 
-type SupervisorReview = {
-  status: string
-  notes: string
-}
-
 type Version = {
   id: number
   version: string
@@ -26,16 +21,24 @@ type Version = {
 }
 
 type Shot = {
+  id?: number
+  project_id?: number
   name: string
   artist: string
   status: string
   priority: string
+  level?: string
   dueDate: string
+  due_date?: string
+
+  lead_note?: string
+  supervisor_note?: string
+
   versions: Version[]
+
   clientReview?: string
   clientNotes?: string
   reviewHistory?: Review[]
-  supervisorReview?: SupervisorReview
 }
 
 type Project = {
@@ -104,26 +107,41 @@ export default function ProjectDetails() {
     setPriority] =
     useState("Medium")
 
+  const [shotLevel,
+    setShotLevel] =
+    useState("Junior")
+
   const [dueDate,
     setDueDate] =
-    useState("")
-
-  const [fileName,
-    setFileName] =
     useState("")
 
   const [notes,
     setNotes] =
     useState("")
 
+  const [inputPath,
+  setInputPath] =
+  useState("")
+
+const [workPath,
+  setWorkPath] =
+  useState("")
+
+const [publishPath,
+  setPublishPath] =
+  useState("")
+
+const [outputPath,
+  setOutputPath] =
+  useState("")
+
   const workflow = [
-    "Not Started",
     "Assigned",
     "WIP",
-    "Review",
-    "Retake",
-    "Approved",
-    "Delivered"
+    "DONE",
+    "LEAD_APPROVED",
+    "APPROVED",
+    "SUP_KICKBACK"
   ]
 
   useEffect(() => {
@@ -162,194 +180,76 @@ export default function ProjectDetails() {
         parsed
       )
 
-      const savedShots =
-        localStorage.getItem(
-          `pbs_shots_${parsed.id}`
-        )
-
-      if (
-        savedShots
-      ) {
-
-        const parsedShots =
-          JSON.parse(
-            savedShots
-          )
-
-        const safeShots =
-          parsedShots.map(
-            (
-              shot: any
-            ) => ({
-
-              ...shot,
-
-              versions:
-                shot.versions ||
-                [],
-
-              clientReview:
-                shot.clientReview ||
-                "Pending",
-
-              clientNotes:
-                shot.clientNotes ||
-                "",
-
-              reviewHistory:
-                shot.reviewHistory ||
-                [],
-
-              supervisorReview:
-                shot.supervisorReview || {
-                  status:
-                    "Pending",
-                  notes:
-                    ""
-                }
-            })
-          )
-
-        setShots(
-          safeShots
-        )
-      }
+      loadShots(
+        parsed.id
+      )
     }
 
   }, [])
 
-  useEffect(() => {
-
-    if (
-      project
-    ) {
-
-      localStorage.setItem(
-        `pbs_shots_${project.id}`,
-        JSON.stringify(
-          shots
-        )
-      )
-    }
-
-  }, [
-    shots,
-    project
-  ])
-
-  const openPreview =
-    (
-      version:
-        Version
+  const loadShots =
+    async (
+      projectId:
+        number
     ) => {
 
-      if (
-        !version.fileUrl
-      ) {
+      try {
+
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/shots"
+          )
+
+        const data =
+          await response.json()
+
+        const filtered =
+          data
+            .filter(
+              (
+                shot: any
+              ) =>
+                shot.project_id ===
+                projectId
+            )
+            .map(
+              (
+                shot: any
+              ) => ({
+
+                ...shot,
+
+                dueDate:
+                  shot.due_date,
+
+                versions:
+                  [],
+
+                clientReview:
+                  "Pending",
+
+                clientNotes:
+                  "",
+
+                reviewHistory:
+                  []
+              })
+            )
+
+        setShots(
+          filtered
+        )
+
+      } catch {
 
         alert(
-          "Preview not available"
+          "Failed to load shots"
         )
-
-        return
       }
-
-      setPreviewFile(
-        version
-      )
-
-      setPreviewOpen(
-        true
-      )
-    }
-
-  const getStatusColor =
-    (
-      value:
-        string
-    ) => {
-
-      switch (
-        value
-      ) {
-
-        case
-          "Delivered":
-          return "#16A34A"
-
-        case
-          "Approved":
-          return "#059669"
-
-        case
-          "Review":
-          return "#2563EB"
-
-        case
-          "WIP":
-          return "#F59E0B"
-
-        case
-          "Retake":
-          return "#DC2626"
-
-        case
-          "Assigned":
-          return "#7C3AED"
-
-        default:
-          return "#6B7280"
-      }
-    }
-
-  const getReviewColor =
-    (
-      value:
-        string
-    ) => {
-
-      switch (
-        value
-      ) {
-
-        case
-          "Approved":
-          return "#16A34A"
-
-        case
-          "Retake":
-          return "#DC2626"
-
-        case
-          "Hold":
-          return "#F59E0B"
-
-        default:
-          return "#6B7280"
-      }
-    }
-
-      const resetForm =
-    () => {
-
-      setShotName("")
-      setArtist("")
-      setStatus(
-        "Assigned"
-      )
-      setPriority(
-        "Medium"
-      )
-      setDueDate("")
-      setFileName("")
-      setNotes("")
-      setShowForm(
-        false
-      )
     }
 
   const saveShot =
-    () => {
+    async () => {
 
       if (
         !shotName ||
@@ -364,75 +264,113 @@ export default function ProjectDetails() {
         return
       }
 
-      const firstVersion =
-        fileName
-          ? [
-              {
-                id:
-                  Date.now(),
+      if (
+        !project
+      ) {
 
-                version:
-                  "v001",
-
-                fileName,
-
-                fileUrl:
-                  "",
-
-                fileType:
-                  "",
-
-                notes,
-
-                uploadedAt:
-                  new Date()
-                    .toLocaleString()
-              }
-            ]
-          : []
-
-      const shotData = {
-
-        name:
-          shotName,
-
-        artist,
-
-        status,
-
-        priority,
-
-        dueDate,
-
-        versions:
-          firstVersion,
-
-        clientReview:
-          "Pending",
-
-        clientNotes:
-          "",
-
-        reviewHistory:
-          [],
-
-        supervisorReview: {
-          status:
-            "Pending",
-          notes:
-            ""
-        }
+        return
       }
 
-      setShots([
-        ...shots,
-        shotData
-      ])
+      try {
 
-      resetForm()
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/shots",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  project_id:
+                    project.id,
+
+                  name:
+                    shotName,
+
+                  artist,
+
+                  status,
+
+                  priority,
+
+                  level:
+                    shotLevel,
+
+                  due_date:
+                    dueDate,
+
+                  input_path:
+                    inputPath,
+
+                  work_path:
+                    workPath,
+
+                  publish_path:
+                    publishPath,
+
+                  output_path:
+                    outputPath
+                })
+            }
+          )
+
+        if (
+          !response.ok
+        ) {
+
+          alert(
+            "Shot save failed"
+          )
+
+          return
+        }
+
+        loadShots(
+          project.id
+        )
+
+        resetForm()
+
+        alert(
+          "Shot Created"
+        )
+
+      } catch {
+
+        alert(
+          "Server Error"
+        )
+      }
     }
 
-  const addVersion =
+  const resetForm =
+    () => {
+
+      setShotName("")
+      setArtist("")
+      setStatus(
+        "Assigned"
+      )
+      setPriority(
+        "Medium"
+      )
+      setShotLevel(
+        "Junior"
+      )
+      setDueDate("")
+      setNotes("")
+      setShowForm(
+        false
+      )
+    }
+
+      const addVersion =
     (
       index:
         number
@@ -480,12 +418,6 @@ export default function ProjectDetails() {
 
           fileName:
             file,
-
-          fileUrl:
-            "",
-
-          fileType:
-            "",
 
           notes:
             note,
@@ -536,33 +468,7 @@ export default function ProjectDetails() {
           review,
 
         clientNotes:
-          note,
-
-        reviewHistory: [
-
-          ...(
-            updated[
-              index
-            ]
-              .reviewHistory ||
-            []
-          ),
-
-          {
-            id:
-              Date.now(),
-
-            status:
-              review,
-
-            notes:
-              note,
-
-            reviewedAt:
-              new Date()
-                .toLocaleString()
-          }
-        ]
+          note
       }
 
       setShots(
@@ -570,44 +476,79 @@ export default function ProjectDetails() {
       )
     }
 
-  const updateSupervisorReview =
+    const copyPath =
+  async (
+    path:
+      string
+  ) => {
+
+    if (
+      !path
+    ) {
+
+      alert(
+        "No path found"
+      )
+
+      return
+    }
+
+    await navigator
+      .clipboard
+      .writeText(
+        path
+      )
+
+    alert(
+      "Path copied"
+    )
+  }
+
+const openFolder =
+  async (
+    path:
+      string
+  ) => {
+
+    if (
+      !path
+    ) {
+
+      alert(
+        "No path found"
+      )
+
+      return
+    }
+
+    try {
+
+      await fetch(
+        `http://127.0.0.1:8000/shots/open-folder?path=${encodeURIComponent(
+          path
+        )}`
+      )
+
+    } catch {
+
+      alert(
+        "Folder open failed"
+      )
+    }
+  }
+
+  const openPreview =
     (
-      index:
-        number,
-
-      field:
-        "status" |
-        "notes",
-
-      value:
-        string
+      version:
+        Version
     ) => {
 
-      const updated =
-        [...shots]
+      setPreviewFile(
+        version
+      )
 
-      updated[
-        index
-      ] = {
-
-        ...updated[
-          index
-        ],
-
-        supervisorReview: {
-
-          ...updated[
-            index
-          ]
-            .supervisorReview,
-
-          [field]:
-            value
-        }
-      }
-
-      setShots(
-        updated
+      setPreviewOpen(
+        true
       )
     }
 
@@ -624,9 +565,9 @@ export default function ProjectDetails() {
         padding:
           "30px"
       }}
-      >
+    >
 
-         <div
+      <div
         style={{
           display:
             "flex",
@@ -690,7 +631,7 @@ export default function ProjectDetails() {
 
             <div
               key={
-                index
+                shot.id
               }
               style={
                 shotCard
@@ -712,6 +653,122 @@ export default function ProjectDetails() {
               </p>
 
               <p>
+                Level:
+                {" "}
+                {
+                  shot.level ||
+                  "Junior"
+                }
+              </p>
+
+              {(
+                shot.level ===
+                "Senior" ||
+
+                shot.level ===
+                "Hero"
+              ) && (
+
+                <p
+                  style={{
+                    color:
+                      "#F59E0B",
+                    fontWeight:
+                      "bold"
+                  }}
+                >
+                  ⚠ High
+                  seniority
+                  shot
+                </p>
+              )}
+
+              <p>
+  Work Path:
+  {" "}
+  {
+    (shot as any)
+      .work_path ||
+    "Not Set"
+  }
+</p>
+
+<p>
+  Publish:
+  {" "}
+  {
+    (shot as any)
+      .publish_path ||
+    "Not Set"
+  }
+</p>
+
+<div
+  style={{
+    display:
+      "flex",
+    gap:
+      "10px",
+    marginTop:
+      "12px",
+    flexWrap:
+      "wrap"
+  }}
+>
+
+  <button
+    onClick={() =>
+      copyPath(
+        (shot as any)
+          .work_path
+      )
+    }
+    style={{
+      background:
+        "#2563EB",
+      border:
+        "none",
+      color:
+        "white",
+      padding:
+        "8px 14px",
+      borderRadius:
+        "8px",
+      cursor:
+        "pointer"
+    }}
+  >
+    📋 Copy Work Path
+  </button>
+
+  <button
+    onClick={() =>
+      openFolder(
+        (shot as any)
+          .work_path
+      )
+    }
+    style={{
+      background:
+        "#16A34A",
+      border:
+        "none",
+      color:
+        "white",
+      padding:
+        "8px 14px",
+      borderRadius:
+        "8px",
+      cursor:
+        "pointer"
+    }}
+  >
+    📂 Open Folder
+  </button>
+
+</div>  
+
+              <p>
                 Due:
                 {" "}
                 {
@@ -719,158 +776,154 @@ export default function ProjectDetails() {
                 }
               </p>
 
-              <span
-                style={{
-                  background:
-                    getStatusColor(
-                      shot.status
-                    ),
-                  padding:
-                    "6px 12px",
-                  borderRadius:
-                    "10px"
-                }}
-              >
+              <p>
+                Status:
+                {" "}
                 {
                   shot.status
                 }
-              </span>
+              </p>
 
-              <div
-                style={{
-                  marginTop:
-                    "20px",
-                  padding:
-                    "20px",
-                  background:
-                    "#1F1F1F",
-                  borderRadius:
-                    "16px"
-                }}
-              >
-
-                <h3>
-                  Supervisor
-                  Review
-                </h3>
-
-                <select
-                  value={
-                    shot
-                      .supervisorReview
-                      ?.status ||
-                    "Pending"
-                  }
-                  onChange={
-                    (e) =>
-                      updateSupervisorReview(
-                        index,
-                        "status",
-                        e.target
-                          .value
-                      )
-                  }
-                  style={{
-                    ...inputStyle,
-                    marginTop:
-                      "10px"
-                  }}
-                >
-
-                  <option>
-                    Pending
-                  </option>
-
-                  <option>
-                    Approved
-                  </option>
-
-                  <option>
-                    Retake
-                  </option>
-
-                  <option>
-                    Hold
-                  </option>
-
-                </select>
-
-                <textarea
-                  placeholder=
-                  "Internal Notes"
-                  value={
-                    shot
-                      .supervisorReview
-                      ?.notes ||
-                    ""
-                  }
-                  onChange={
-                    (e) =>
-                      updateSupervisorReview(
-                        index,
-                        "notes",
-                        e.target
-                          .value
-                      )
-                  }
-                  style={{
-                    ...inputStyle,
-                    minHeight:
-                      "100px"
-                  }}
-                />
-
-              </div>
-
-              <div
-                style={{
-                  marginTop:
-                    "20px"
-                }}
-              >
-
-                <strong>
-                  Client
-                  Review:
-                </strong>
-
-                <span
-                  style={{
-                    background:
-                      getReviewColor(
-                        shot.clientReview ||
-                        "Pending"
-                      ),
-                    padding:
-                      "6px 12px",
-                    borderRadius:
-                      "10px",
-                    marginLeft:
-                      "10px"
-                  }}
-                >
-                  {
-                    shot.clientReview ||
-                    "Pending"
-                  }
-                </span>
-
-              </div>
-
-              {shot.clientNotes && (
+              {shot.lead_note && (
 
                 <p
                   style={{
+                    color:
+                      "#F59E0B"
+                  }}
+                >
+                  Lead Note:
+                  {" "}
+                  {
+                    shot.lead_note
+                  }
+                </p>
+              )}
+
+              {shot.supervisor_note && (
+
+                <p
+                  style={{
+                    color:
+                      "#EF4444"
+                  }}
+                >
+                  Supervisor
+                  Note:
+                  {" "}
+                  {
+                    shot.supervisor_note
+                  }
+                </p>
+              )}
+
+              {shot.status
+                ?.toLowerCase() ===
+              "lead_approved" && (
+
+                <div
+                  style={{
                     marginTop:
+                      "20px",
+                    display:
+                      "flex",
+                    gap:
                       "10px"
                   }}
                 >
-                  Notes:
-                  {" "}
-                  {
-                    shot.clientNotes
-                  }
-                </p>
+
+                  <button
+                    onClick={
+                      async () => {
+
+                        await fetch(
+                          `http://127.0.0.1:8000/workflow/shot/${shot.id}`,
+                          {
+                            method:
+                              "PUT",
+
+                            headers: {
+                              "Content-Type":
+                                "application/json"
+                            },
+
+                            body:
+                              JSON.stringify({
+                                status:
+                                  "APPROVED"
+                              })
+                          }
+                        )
+
+                        window.location.reload()
+                      }
+                    }
+                    style={{
+                      background:
+                        "#16A34A",
+                      border:
+                        "none",
+                      color:
+                        "white",
+                      padding:
+                        "10px 16px",
+                      borderRadius:
+                        "10px"
+                    }}
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    onClick={
+                      async () => {
+
+                        const supervisor_note =
+                          prompt(
+                            "Supervisor feedback"
+                          ) || ""
+
+                        await fetch(
+                          `http://127.0.0.1:8000/workflow/shot/${shot.id}`,
+                          {
+                            method:
+                              "PUT",
+
+                            headers: {
+                              "Content-Type":
+                                "application/json"
+                            },
+
+                            body:
+                              JSON.stringify({
+                                status:
+                                  "SUP_KICKBACK",
+
+                                supervisor_note
+                              })
+                          }
+                        )
+
+                        window.location.reload()
+                      }
+                    }
+                    style={{
+                      background:
+                        "#DC2626",
+                      border:
+                        "none",
+                      color:
+                        "white",
+                      padding:
+                        "10px 16px",
+                      borderRadius:
+                        "10px"
+                    }}
+                  >
+                    Kickback
+                  </button>
+
+                </div>
               )}
 
               <h3
@@ -879,8 +932,7 @@ export default function ProjectDetails() {
                     "20px"
                 }}
               >
-                Version
-                History
+                Version History
               </h3>
 
               {shot.versions.map(
@@ -892,15 +944,13 @@ export default function ProjectDetails() {
                     key={
                       version.id
                     }
-                    style={{
-                      ...versionCard,
-                      cursor:
-                        "pointer"
-                    }}
                     onClick={() =>
                       openPreview(
                         version
                       )
+                    }
+                    style={
+                      versionCard
                     }
                   >
 
@@ -925,12 +975,6 @@ export default function ProjectDetails() {
                         version.notes
                       }
                     </p>
-
-                    <small>
-                      {
-                        version.uploadedAt
-                      }
-                    </small>
 
                   </div>
                 )
@@ -957,9 +1001,7 @@ export default function ProjectDetails() {
                     addBtn
                   }
                 >
-                  +
                   Upload
-                  New
                   Version
                 </button>
 
@@ -975,8 +1017,7 @@ export default function ProjectDetails() {
                       "#2563EB"
                   }}
                 >
-                  Client
-                  Review
+                  Client Review
                 </button>
 
               </div>
@@ -986,6 +1027,7 @@ export default function ProjectDetails() {
         )}
 
       </div>
+
             {showForm && (
 
         <div
@@ -1041,8 +1083,7 @@ export default function ProjectDetails() {
             >
 
               <option value="">
-                Select
-                Artist
+                Select Artist
               </option>
 
               {artists.map(
@@ -1107,6 +1148,117 @@ export default function ProjectDetails() {
 
             </select>
 
+            <select
+              value={
+                shotLevel
+              }
+              onChange={(
+                e
+              ) =>
+                setShotLevel(
+                  e.target
+                    .value
+                )
+              }
+              style={
+                inputStyle
+              }
+            >
+
+              <option>
+                Junior
+              </option>
+
+              <option>
+                Mid
+              </option>
+
+              <option>
+                Senior
+              </option>
+
+              <option>
+                Hero
+              </option>
+
+            </select>
+
+              <input
+  placeholder=
+  "Input Path"
+  value={
+    inputPath
+  }
+  onChange={(
+    e
+  ) =>
+    setInputPath(
+      e.target
+        .value
+    )
+  }
+  style={
+    inputStyle
+  }
+/>
+
+<input
+  placeholder=
+  "Work Path"
+  value={
+    workPath
+  }
+  onChange={(
+    e
+  ) =>
+    setWorkPath(
+      e.target
+        .value
+    )
+  }
+  style={
+    inputStyle
+  }
+/>
+
+<input
+  placeholder=
+  "Publish Path"
+  value={
+    publishPath
+  }
+  onChange={(
+    e
+  ) =>
+    setPublishPath(
+      e.target
+        .value
+    )
+  }
+  style={
+    inputStyle
+  }
+/>
+
+<input
+  placeholder=
+  "Output Path"
+  value={
+    outputPath
+  }
+  onChange={(
+    e
+  ) =>
+    setOutputPath(
+      e.target
+        .value
+    )
+  }
+  style={
+    inputStyle
+  }
+/>
+
             <input
               type="date"
               value={
@@ -1120,30 +1272,6 @@ export default function ProjectDetails() {
                     .value
                 )
               }
-              style={
-                inputStyle
-              }
-            />
-
-            <input
-              type="file"
-              onChange={(
-                e
-              ) => {
-
-                const file =
-                  e.target
-                    .files?.[0]
-
-                if (
-                  file
-                ) {
-
-                  setFileName(
-                    file.name
-                  )
-                }
-              }}
               style={
                 inputStyle
               }
@@ -1217,7 +1345,7 @@ export default function ProjectDetails() {
               width:
                 "80%",
               maxWidth:
-                "1000px",
+                "900px",
               background:
                 "#171717",
               padding:
@@ -1266,60 +1394,12 @@ export default function ProjectDetails() {
               }
             </h2>
 
-            {previewFile
-              .fileType
-              ?.startsWith(
-                "image"
-              ) ? (
-
-              <img
-                src={
-                  previewFile
-                    .fileUrl
-                }
-                alt="preview"
-                style={{
-                  width:
-                    "100%",
-                  borderRadius:
-                    "14px",
-                  marginTop:
-                    "20px"
-                }}
-              />
-
-            ) : previewFile
-              .fileType
-              ?.startsWith(
-                "video"
-              ) ? (
-
-              <video
-                controls
-                style={{
-                  width:
-                    "100%",
-                  borderRadius:
-                    "14px",
-                  marginTop:
-                    "20px"
-                }}
-              >
-                <source
-                  src={
-                    previewFile
-                      .fileUrl
-                  }
-                />
-              </video>
-
-            ) : (
-
-              <p>
-                Preview
-                unavailable
-              </p>
-            )}
+            <p>
+              {
+                previewFile
+                  .notes
+              }
+            </p>
 
           </div>
 
@@ -1349,7 +1429,9 @@ const versionCard = {
   borderRadius:
     "12px",
   marginTop:
-    "10px"
+    "10px",
+  cursor:
+    "pointer"
 }
 
 const addBtn = {

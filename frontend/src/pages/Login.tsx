@@ -1,12 +1,10 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import {
+  useState
+} from "react"
 
-type User = {
-  email: string
-  password: string
-  role: string
-  name: string
-}
+import {
+  useNavigate
+} from "react-router-dom"
 
 export default function Login() {
 
@@ -21,125 +19,124 @@ export default function Login() {
     setPassword] =
     useState("")
 
-  const users:
-    User[] = [
-
-    {
-      email:
-        "admin@pbs.com",
-
-      password:
-        "1234",
-
-      role:
-        "admin",
-
-      name:
-        "Admin"
-    },
-
-    {
-      email:
-        "supervisor@pbs.com",
-
-      password:
-        "1234",
-
-      role:
-        "supervisor",
-
-      name:
-        "Supervisor"
-    },
-
-    {
-      email:
-        "artist@pbs.com",
-
-      password:
-        "1234",
-
-      role:
-        "artist",
-
-      name:
-        "Kapil"
-    },
-
-    {
-      email:
-        "client@pbs.com",
-
-      password:
-        "1234",
-
-      role:
-        "client",
-
-      name:
-        "Client"
-    }
-  ]
+  const [loading,
+    setLoading] =
+    useState(false)
 
   const handleLogin =
-    () => {
+    async () => {
 
-      const foundUser =
-        users.find(
-          (
-            user
-          ) =>
-            user.email ===
-              email &&
-            user.password ===
-              password
+      try {
+
+        setLoading(
+          true
         )
 
-      if (
-        !foundUser
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/auth/login",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  email,
+                  password
+                })
+            }
+          )
+
+        const data =
+          await response.json()
+
+        if (
+          !response.ok
+        ) {
+
+          alert(
+            data.detail ||
+            "Login failed"
+          )
+
+          return
+        }
+
+        localStorage.setItem(
+          "pbs_token",
+          data.access_token
+        )
+
+        localStorage.setItem(
+          "pbs_user",
+          JSON.stringify({
+            role:
+              data.role,
+
+            name:
+              data.name,
+
+            email
+          })
+        )
+
+        if (
+          data.role ===
+          "artist"
+        ) {
+
+          navigate(
+            "/artist-shots"
+          )
+
+          return
+        }
+
+        if (
+        data.role ===
+        "lead"
       ) {
+
+        navigate(
+          "/lead-qc"
+       )
+
+          return
+        }
+
+        if (
+          data.role ===
+          "client"
+        ) {
+
+          navigate(
+            "/client-portal"
+          )
+
+          return
+        }
+
+        navigate(
+          "/dashboard"
+        )
+
+      } catch {
 
         alert(
-          "Invalid Credentials"
+          "Server not running"
         )
 
-        return
+      } finally {
+
+        setLoading(
+          false
+        )
       }
-
-      localStorage.setItem(
-        "pbs_user",
-        JSON.stringify(
-          foundUser
-        )
-      )
-
-      if (
-        foundUser.role ===
-        "artist"
-      ) {
-
-        navigate(
-          "/artist-shots"
-        )
-
-        return
-      }
-
-      if (
-        foundUser.role ===
-        "client"
-      ) {
-
-        navigate(
-          "/client-portal"
-        )
-
-        return
-      }
-
-      navigate(
-        "/dashboard"
-      )
     }
 
   return (
@@ -170,37 +167,18 @@ export default function Login() {
           padding:
             "40px",
           borderRadius:
-            "24px",
-          boxShadow:
-            "0 0 30px rgba(0,0,0,0.3)"
+            "24px"
         }}
       >
 
         <h1
           style={{
             textAlign:
-              "center",
-            marginBottom:
-              "10px"
+              "center"
           }}
         >
           PBS Login
         </h1>
-
-        <p
-          style={{
-            textAlign:
-              "center",
-            color:
-              "#888",
-            marginBottom:
-              "30px"
-          }}
-        >
-          Production
-          Pipeline
-          Login
-        </p>
 
         <input
           type="email"
@@ -244,45 +222,12 @@ export default function Login() {
             loginButton
           }
         >
-          Login
+          {
+            loading
+              ? "Logging in..."
+              : "Login"
+          }
         </button>
-
-        <div
-          style={{
-            marginTop:
-              "25px",
-            fontSize:
-              "14px",
-            color:
-              "#999"
-          }}
-        >
-
-          <p>
-            Admin:
-            admin@pbs.com
-            / 1234
-          </p>
-
-          <p>
-            Supervisor:
-            supervisor@pbs.com
-            / 1234
-          </p>
-
-          <p>
-            Artist:
-            artist@pbs.com
-            / 1234
-          </p>
-
-          <p>
-            Client:
-            client@pbs.com
-            / 1234
-          </p>
-
-        </div>
 
       </div>
 
@@ -295,7 +240,7 @@ const inputStyle = {
     "100%",
   padding:
     "14px",
-  marginBottom:
+  marginTop:
     "15px",
   borderRadius:
     "12px",
@@ -314,6 +259,8 @@ const loginButton = {
     "100%",
   padding:
     "14px",
+  marginTop:
+    "20px",
   background:
     "#FF7A00",
   border:
@@ -324,8 +271,6 @@ const loginButton = {
     "12px",
   cursor:
     "pointer",
-  fontSize:
-    "16px",
   fontWeight:
     "bold" as const
 }

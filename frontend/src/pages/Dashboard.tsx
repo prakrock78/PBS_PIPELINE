@@ -574,15 +574,97 @@ export default function Dashboard() {
         </p>
 
         <div
-          style={
-            menuItem
-          }
-          onClick={
-            logout
-          }
-        >
-          Logout
-        </div>
+  style={
+    menuItem
+  }
+  onClick={() =>
+    navigate(
+      "/dashboard"
+    )
+  }
+>
+  Dashboard
+</div>
+
+<div
+  style={
+    menuItem
+  }
+  onClick={() =>
+    navigate(
+      "/projects"
+    )
+  }
+>
+  Projects
+</div>
+
+<div
+  style={
+    menuItem
+  }
+  onClick={() =>
+    navigate(
+      "/artists"
+    )
+  }
+>
+  Artists
+</div>
+
+<div
+  style={
+    menuItem
+  }
+  onClick={() =>
+    navigate(
+      "/artist-shots"
+    )
+  }
+>
+  Shots
+</div>
+
+<div
+  style={
+    menuItem
+  }
+  onClick={() =>
+    navigate(
+      "/timeline"
+    )
+  }
+>
+  Timeline
+</div>
+
+{user?.role ===
+  "client" && (
+
+  <div
+    style={
+      menuItem
+    }
+    onClick={() =>
+      navigate(
+        "/client-portal"
+      )
+    }
+  >
+    Client Portal
+  </div>
+)}
+
+<div
+  style={
+    menuItem
+  }
+  onClick={
+    logout
+  }
+>
+  Logout
+</div>
 
       </div>
 
